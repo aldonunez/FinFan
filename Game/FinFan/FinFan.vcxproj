@@ -1,0 +1,175 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{EDB6B691-F2C8-4294-808F-CB53C54B2E83}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>FinFan</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Configuration)\</OutDir>
+    <IntDir>$(OutDir)$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ALLEGRO_INC_ROOT)\include;$(ALLEGRO_INC_ROOT)\build\include;$(ALLEGRO_INC_ROOT)\addons\audio;$(ALLEGRO_INC_ROOT)\addons\acodec;$(ALLEGRO_INC_ROOT)\addons\image;$(ALLEGRO_INC_ROOT)\addons\primitives;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>Common.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ALLEGRO_LIB_ROOT);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>allegro.lib;allegro_audio.lib;allegro_acodec.lib;allegro_image.lib;allegro_primitives.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <Manifest>
+      <EnableDPIAwareness>true</EnableDPIAwareness>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ALLEGRO_INC_ROOT)\include;$(ALLEGRO_INC_ROOT)\build\include;$(ALLEGRO_INC_ROOT)\addons\audio;$(ALLEGRO_INC_ROOT)\addons\acodec;$(ALLEGRO_INC_ROOT)\addons\image;$(ALLEGRO_INC_ROOT)\addons\primitives;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>Common.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>$(ALLEGRO_LIB_ROOT);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>allegro.lib;allegro_audio.lib;allegro_acodec.lib;allegro_image.lib;allegro_primitives.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="Battle.h" />
+    <ClInclude Include="BattleMenus.h" />
+    <ClInclude Include="BattleMod.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="Dialog.h" />
+    <ClInclude Include="FlyerSprite.h" />
+    <ClInclude Include="Ids.h" />
+    <ClInclude Include="Input.h" />
+    <ClInclude Include="Level.h" />
+    <ClInclude Include="Global.h" />
+    <ClInclude Include="LTile.h" />
+    <ClInclude Include="Magic.h" />
+    <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="MapSprite.h" />
+    <ClInclude Include="Menus.h" />
+    <ClInclude Include="Module.h" />
+    <ClInclude Include="ObjEvents.h" />
+    <ClInclude Include="Overworld.h" />
+    <ClInclude Include="OWTile.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="SaveFolder.h" />
+    <ClInclude Include="SaveLoadMenu.h" />
+    <ClInclude Include="SceneStack.h" />
+    <ClInclude Include="ShopMenus.h" />
+    <ClInclude Include="Sound.h" />
+    <ClInclude Include="Sprite.h" />
+    <ClInclude Include="StoryScenes.h" />
+    <ClInclude Include="Text.h" />
+    <ClInclude Include="Title.h" />
+    <ClInclude Include="VehicleSprites.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Battle.cpp" />
+    <ClCompile Include="BattleMenus.cpp" />
+    <ClCompile Include="Common.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="Dialog.cpp" />
+    <ClCompile Include="FlyerSprite.cpp" />
+    <ClCompile Include="Input.cpp" />
+    <ClCompile Include="ItemMenu.cpp" />
+    <ClCompile Include="Level.cpp" />
+    <ClCompile Include="FinFan.cpp" />
+    <ClCompile Include="Global.cpp" />
+    <ClCompile Include="Magic.cpp" />
+    <ClCompile Include="MagicMenu.cpp" />
+    <ClCompile Include="MainMenu.cpp" />
+    <ClCompile Include="MapSprite.cpp" />
+    <ClCompile Include="Menus.cpp" />
+    <ClCompile Include="ObjEvents.cpp" />
+    <ClCompile Include="Overworld.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="SaveFolder.cpp" />
+    <ClCompile Include="SaveLoadMenu.cpp" />
+    <ClCompile Include="SceneStack.cpp" />
+    <ClCompile Include="ShopMenus.cpp" />
+    <ClCompile Include="Sound.cpp" />
+    <ClCompile Include="Sprite.cpp" />
+    <ClCompile Include="StoryScenes.cpp" />
+    <ClCompile Include="Text.cpp" />
+    <ClCompile Include="Title.cpp" />
+    <ClCompile Include="VehicleSprites.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FinFan.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ItemGroup>
+    <AllegroDlls Include="$(ALLEGRO_LIB_ROOT)\allegro-5.1.dll" />
+    <AllegroDlls Include="$(ALLEGRO_LIB_ROOT)\allegro_main-5.1.dll" />
+    <AllegroDlls Include="$(ALLEGRO_LIB_ROOT)\allegro_audio-5.1.dll" />
+    <AllegroDlls Include="$(ALLEGRO_LIB_ROOT)\allegro_acodec-5.1.dll" />
+    <AllegroDlls Include="$(ALLEGRO_LIB_ROOT)\allegro_image-5.1.dll" />
+    <AllegroDlls Include="$(ALLEGRO_LIB_ROOT)\allegro_dialog-5.1.dll" />
+    <AllegroDlls Include="$(ALLEGRO_LIB_ROOT)\allegro_primitives-5.1.dll" />
+  </ItemGroup>
+  <Target Name="AfterBuild">
+    <Copy SkipUnchangedFiles="true" SourceFiles="@(AllegroDlls)" DestinationFolder="$(OutDir)" />
+  </Target>
+</Project>
