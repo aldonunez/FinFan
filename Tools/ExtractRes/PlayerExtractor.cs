@@ -15,7 +15,7 @@ namespace ExtractRes
     {
         internal static void Extract( Options options )
         {
-            WriteChargeFile( @"E:\temp\chargeBoost.dat" );
+            WriteChargeFile( options.MakeOutPath( @"chargeBoost.dat" ) );
         }
 
         static byte[] MakeEvenSpellCharge( int maxLevel )

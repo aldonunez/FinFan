@@ -77,5 +77,10 @@ namespace ExtractRes
 
             return null;
         }
+
+        public string MakeOutPath( string relativePath )
+        {
+            return Path.Combine( OutPath, relativePath );
+        }
     }
 }

@@ -437,7 +437,7 @@ namespace ExtractRes
                     endingPal, 
                     blank, 
                     1 );
-                bmp.Save( @"E:\temp\ending.png", ImageFormat.Png );
+                bmp.Save( options.MakeOutPath( @"ending.png" ), ImageFormat.Png );
 
                 ExtractStoryBackground( 
                     reader, 
@@ -447,7 +447,7 @@ namespace ExtractRes
                     openingPal, 
                     blank, 
                     109 );
-                bmp.Save( @"E:\temp\opening.png", ImageFormat.Png );
+                bmp.Save( options.MakeOutPath( @"opening.png" ), ImageFormat.Png );
             }
         }
 
@@ -499,7 +499,7 @@ namespace ExtractRes
             {
                 reader.BaseStream.Position = ShopTypes;
                 byte[] shopTypes = reader.ReadBytes( 71 );
-                File.WriteAllBytes( @"E:\temp\shopTypes.dat", shopTypes );
+                File.WriteAllBytes( options.MakeOutPath( @"shopTypes.dat" ), shopTypes );
 
                 ushort[] shopPtrs = new ushort[71];
 
@@ -510,7 +510,7 @@ namespace ExtractRes
                     shopPtrs[i] = reader.ReadUInt16();
                 }
 
-                const string ShopFile = @"E:\temp\shopStock.tab";
+                string ShopFile = options.MakeOutPath( @"shopStock.tab" );
                 byte[] data = reader.ReadBytes( 0x180 - (71 * 2) );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.Create( ShopFile ) ) )
@@ -525,7 +525,7 @@ namespace ExtractRes
                 }
 
                 string[] shopText = Text.ReadStringTable( reader, ShopText, ShopTextPage, 38 );
-                WriteStringTableFile( @"E:\temp\shopText.tab", ShopMessages );
+                WriteStringTableFile( options.MakeOutPath( @"shopText.tab" ), ShopMessages );
             }
         }
 
@@ -547,7 +547,7 @@ namespace ExtractRes
                 Array.Resize( ref storyText, storyText.Length + 1 );
                 storyText[storyText.Length - 1] = Text.DecodeString( reader, IntroText );
 
-                WriteStringTableFile( @"E:\temp\storyText.tab", storyText );
+                WriteStringTableFile( options.MakeOutPath( @"storyText.tab" ), storyText );
 #else
                 string[] story = new string[storyText.Length + 1 + Credits.Length];
                 Array.Copy( storyText, story, 4 );
@@ -555,7 +555,7 @@ namespace ExtractRes
                 Array.Copy( storyText, 4, story, 4 + Credits.Length, storyText.Length - 4 );
                 story[story.Length - 1] = Text.DecodeString( reader, IntroText );
 
-                WriteStringTableFile( @"E:\temp\storyText.tab", story );
+                WriteStringTableFile( options.MakeOutPath( @"storyText.tab" ), story );
 #endif
             }
         }
@@ -565,7 +565,7 @@ namespace ExtractRes
             using ( BinaryReader reader = new BinaryReader( File.OpenRead( options.RomPath ) ) )
             {
                 string[] menuText = Text.ReadStringTable( reader, MenuText, MenuTextPage, 64 );
-                WriteStringTableFile( @"E:\temp\menuText.tab", menuText );
+                WriteStringTableFile( options.MakeOutPath( @"menuText.tab" ), menuText );
 
                 Bitmap bmp = new Bitmap( 128, 16 );
                 Palette darkPal = new Palette( 0, 0, 1, 0x30 );
@@ -582,7 +582,7 @@ namespace ExtractRes
                 DrawSprite( reader, OrbCHR + TileSize * 20, bmp, lightPal, 2, 1, 96, 0, false );
                 DrawSprite( reader, OrbCHR + TileSize * 20, bmp, darkPal, 2, 1, 96, 8, false );
 
-                bmp.Save( @"E:\temp\menu.png" );
+                bmp.Save( options.MakeOutPath( @"menu.png" ) );
             }
         }
 
@@ -593,7 +593,7 @@ namespace ExtractRes
                 reader.BaseStream.Position = Prices;
                 byte[] priceBuf = reader.ReadBytes( 2 * 256 );
 
-                File.WriteAllBytes( @"E:\temp\prices.dat", priceBuf );
+                File.WriteAllBytes( options.MakeOutPath( @"prices.dat" ), priceBuf );
             }
         }
 
@@ -604,7 +604,7 @@ namespace ExtractRes
                 reader.BaseStream.Position = Treasures;
                 byte[] treasuresBuf = reader.ReadBytes( 256 );
 
-                File.WriteAllBytes( @"E:\temp\treasure.dat", treasuresBuf );
+                File.WriteAllBytes( options.MakeOutPath( @"treasure.dat" ), treasuresBuf );
             }
         }
 
@@ -615,7 +615,7 @@ namespace ExtractRes
                 reader.BaseStream.Position = InitFlags;
                 byte[] flagsBuf = reader.ReadBytes( 256 );
 
-                File.WriteAllBytes( @"E:\temp\initFlags.dat", flagsBuf );
+                File.WriteAllBytes( options.MakeOutPath( @"initFlags.dat" ), flagsBuf );
             }
         }
 
@@ -638,7 +638,7 @@ namespace ExtractRes
                     }
                 }
 
-                File.WriteAllBytes( @"E:\temp\talkParams.dat", data );
+                File.WriteAllBytes( options.MakeOutPath( @"talkParams.dat" ), data );
             }
         }
 
@@ -648,7 +648,7 @@ namespace ExtractRes
             {
                 string[] msgs = Text.ReadStringTable( reader, DialogueText, DialogueTextPage, 256 );
 
-                const string DialogueFile = @"E:\temp\dialogue.tab";
+                string DialogueFile = options.MakeOutPath( @"dialogue.tab" );
 
                 WriteStringTableFile( DialogueFile, msgs );
             }
@@ -661,7 +661,7 @@ namespace ExtractRes
                 reader.BaseStream.Position = BattleRates;
                 byte[] rates = reader.ReadBytes( 64 );
 
-                const string RatesFile = @"E:\temp\battleRates.dat";
+                string RatesFile = options.MakeOutPath( @"battleRates.dat" );
 
                 File.WriteAllBytes( RatesFile, rates );
             }
@@ -676,7 +676,7 @@ namespace ExtractRes
                 byte[] ys = reader.ReadBytes( 64 );
                 byte[] mapIds = reader.ReadBytes( 64 );
 
-                const string TeleportsFile = @"E:\temp\swapTeleports.dat";
+                string TeleportsFile = options.MakeOutPath( @"swapTeleports.dat" );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( TeleportsFile ) ) )
                 {
@@ -701,7 +701,7 @@ namespace ExtractRes
                 byte[] xs = reader.ReadBytes( 16 );
                 byte[] ys = reader.ReadBytes( 16 );
 
-                const string TeleportsFile = @"E:\temp\exitTeleports.dat";
+                string TeleportsFile = options.MakeOutPath( @"exitTeleports.dat" );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( TeleportsFile ) ) )
                 {
@@ -749,7 +749,7 @@ namespace ExtractRes
                 reader.BaseStream.Position = firstMapPos;
                 byte[] mapData = reader.ReadBytes( mapDataSize );
 
-                const string LMapsFile = @"E:\temp\levelMaps.tab";
+                string LMapsFile = options.MakeOutPath( @"levelMaps.tab" );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( LMapsFile ) ) )
                 {
@@ -770,11 +770,11 @@ namespace ExtractRes
             {
                 reader.BaseStream.Position = LTilesetAttr;
                 byte[] attrBuf = reader.ReadBytes( 8 * 128 * 2 );
-                File.WriteAllBytes( @"E:\temp\levelTileAttr.dat", attrBuf );
+                File.WriteAllBytes( options.MakeOutPath( @"levelTileAttr.dat" ), attrBuf );
 
                 reader.BaseStream.Position = TilesetIndexes;
                 byte[] tileSetIDs = reader.ReadBytes( 64 );
-                File.WriteAllBytes( @"E:\temp\levelTilesets.dat", tileSetIDs );
+                File.WriteAllBytes( options.MakeOutPath( @"levelTilesets.dat" ), tileSetIDs );
             }
         }
 
@@ -787,7 +787,7 @@ namespace ExtractRes
                 byte[] ys = reader.ReadBytes( 32 );
                 byte[] mapIds = reader.ReadBytes( 32 );
 
-                const string TeleportsFile = @"E:\temp\enterTeleports.dat";
+                string TeleportsFile = options.MakeOutPath( @"enterTeleports.dat" );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( TeleportsFile ) ) )
                 {
@@ -811,17 +811,17 @@ namespace ExtractRes
                 reader.BaseStream.Position = Domains;
                 byte[] domainsBuf = reader.ReadBytes( 128 * 8 );
 
-                File.WriteAllBytes( @"E:\temp\domains.dat", domainsBuf );
+                File.WriteAllBytes( options.MakeOutPath( @"domains.dat" ), domainsBuf );
 
                 reader.BaseStream.Position = FormationWeights;
                 byte[] weightsBuf = reader.ReadBytes( 64 );
 
-                File.WriteAllBytes( @"E:\temp\formationWeights.dat", weightsBuf );
+                File.WriteAllBytes( options.MakeOutPath( @"formationWeights.dat" ), weightsBuf );
 
                 reader.BaseStream.Position = TileBackdrops;
                 byte[] backdropsBuf = reader.ReadBytes( 128 );
 
-                File.WriteAllBytes( @"E:\temp\tileBackdrops.dat", backdropsBuf );
+                File.WriteAllBytes( options.MakeOutPath( @"tileBackdrops.dat" ), backdropsBuf );
             }
         }
 
@@ -885,7 +885,7 @@ namespace ExtractRes
 
                 byte b = reader.ReadByte();
 
-                Console.WriteLine( "{0:X2}", b );
+                //Console.WriteLine( "{0:X2}", b );
 
                 if ( b < 0xD0 )
                 {
@@ -902,9 +902,9 @@ namespace ExtractRes
                     int targetPtr = reader.ReadUInt16();
                     int targetPos = (targetPtr - firstPtr);
 
-                    Console.WriteLine( "Loop", b );
-                    Console.WriteLine( "Start loop running frames: {0}", 
-                        instFrames[targetPos] & 0x7fffffff );
+                    //Console.WriteLine( "Loop", b );
+                    //Console.WriteLine( "Start loop running frames: {0}", 
+                    //    instFrames[targetPos] & 0x7fffffff );
 
                     loopBeginFrames = (int) (instFrames[targetPos] & 0x7fffffff);
                     break;
@@ -927,26 +927,26 @@ namespace ExtractRes
                             reader.BaseStream.Position = targetPos;
                     }
 
-                    Console.WriteLine( "Loop: {0:X}", b );
+                    //Console.WriteLine( "Loop: {0:X}", b );
                 }
                 else if ( b >= 0xF9 && b <= 0xFE )
                 {
                     tempoIndex = b - 0xF9;
-                    Console.WriteLine( "Change tempo: {0:X}", b );
+                    //Console.WriteLine( "Change tempo: {0:X}", b );
                 }
                 else if ( b == 0xF8 )
                 {
                     b = reader.ReadByte();
-                    Console.WriteLine( "Change envelope speed: {0:X}", b );
+                    //Console.WriteLine( "Change envelope speed: {0:X}", b );
                 }
                 else if ( b == 0xFF )
                 {
-                    Console.WriteLine( "End" );
+                    //Console.WriteLine( "End" );
                     break;
                 }
             }
 
-            Console.WriteLine( "End frames: {0}", runningFrames );
+            //Console.WriteLine( "End frames: {0}", runningFrames );
 
             return new LoopPoints() { Begin = loopBeginFrames, End = runningFrames };
         }
@@ -975,7 +975,7 @@ namespace ExtractRes
                 reader.BaseStream.Position = 0x37369;
                 byte[] noteLenghts = reader.ReadBytes( 16 * 6 );
 
-                const string LoopFile = @"E:\temp\loopPoints.dat";
+                string LoopFile = options.MakeOutPath( @"loopPoints.dat" );
                 using ( BinaryWriter writer = new BinaryWriter( File.Create( LoopFile ) ) )
                 {
                     for ( int i = 0; i < 24; i++ )
@@ -1000,7 +1000,7 @@ namespace ExtractRes
         {
             using ( BinaryReader reader = new BinaryReader( File.OpenRead( options.RomPath ) ) )
             {
-                const string FontFile = @"E:\temp\main.mfont";
+                string FontFile = options.MakeOutPath( @"main.mfont" );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( FontFile ) ) )
                 {
@@ -1045,7 +1045,7 @@ namespace ExtractRes
                 DrawSprite( reader, EffectCHR, bmp, palette, 2, 2, 0, 8 * 8, true );
 
                 bmp.MakeTransparent( DefaultSystemPalette.Colors[1] );
-                bmp.Save( @"E:\temp\font.png", ImageFormat.Png );
+                bmp.Save( options.MakeOutPath( @"font.png" ), ImageFormat.Png );
 
                 Bitmap bmpB = new Bitmap( bmp.Width, bmp.Height );
 
@@ -1064,7 +1064,7 @@ namespace ExtractRes
                     Outline( bmpB, new Rectangle( 80, 0, 32, 8 ) );
                 }
 
-                bmpB.Save( @"E:\temp\fontB.png", ImageFormat.Png );
+                bmpB.Save( options.MakeOutPath( @"fontB.png" ), ImageFormat.Png );
             }
         }
 
@@ -1147,7 +1147,7 @@ namespace ExtractRes
                     levelMusic[i] = (byte) OrigToNewMusic[origMusic];
                 }
 
-                File.WriteAllBytes( @"E:\temp\levelMusic.dat", levelMusic );
+                File.WriteAllBytes( options.MakeOutPath( @"levelMusic.dat" ), levelMusic );
             }
         }
 
@@ -1182,7 +1182,8 @@ namespace ExtractRes
                     mapToGraphicTileset[i] = (byte) graphicTileSets.IndexOf( tileset );
                 }
 
-                File.WriteAllBytes( @"E:\temp\levelGraphicSets.dat", mapToGraphicTileset );
+                File.WriteAllBytes( 
+                    options.MakeOutPath( @"levelGraphicSets.dat" ), mapToGraphicTileset );
 
                 int y = 0;
 
@@ -1198,7 +1199,8 @@ namespace ExtractRes
 
                         ExtractTiles( reader, paletteBase, tileBuildBase, attrBase, chrBase, bmp, y );
 
-                        string filename = string.Format( @"E:\temp\levelTilesOut{0:X2}.png", i );
+                        string filename = string.Format( 
+                            options.MakeOutPath( @"levelTilesOut{0:X2}.png" ), i );
                         bmp.Save( filename, ImageFormat.Png );
                     }
                 }
@@ -1217,7 +1219,8 @@ namespace ExtractRes
 
                         ExtractTiles( reader, paletteBase, tileBuildBase, attrBase, chrBase, bmp, y );
 
-                        string filename = string.Format( @"E:\temp\levelTilesIn{0:X2}.png", i );
+                        string filename = string.Format( 
+                            options.MakeOutPath( @"levelTilesIn{0:X2}.png" ), i );
                         bmp.Save( filename, ImageFormat.Png );
                     }
                 }
@@ -1230,7 +1233,7 @@ namespace ExtractRes
             {
                 reader.BaseStream.Position = OWTilesetAttr;
                 byte[] attrBuf = reader.ReadBytes( 128 * 2 );
-                File.WriteAllBytes( @"E:\temp\owTileAttr.dat", attrBuf );
+                File.WriteAllBytes( options.MakeOutPath( @"owTileAttr.dat" ), attrBuf );
             }
         }
 
@@ -1265,7 +1268,7 @@ namespace ExtractRes
                 reader.BaseStream.Position = firstRowPos;
                 byte[] rowData = reader.ReadBytes( rowDataSize );
 
-                const string OWMapFile = @"E:\temp\owMap.tab";
+                string OWMapFile = options.MakeOutPath( @"owMap.tab" );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( OWMapFile ) ) )
                 {
@@ -1288,7 +1291,7 @@ namespace ExtractRes
 
                 ExtractTiles( reader, OverworldPalettes, OWTileBuild, OWTileAttr, OWTileCHR, bmp, 0 );
 
-                bmp.Save( @"E:\temp\overworldTiles.png", ImageFormat.Png );
+                bmp.Save( options.MakeOutPath( @"owTiles.png" ), ImageFormat.Png );
             }
         }
 
@@ -1407,7 +1410,7 @@ namespace ExtractRes
                     objMaps[207 + i] = batMaps[i];
                 }
 
-                const string ObjectsFile = @"E:\temp\objects.dat";
+                string ObjectsFile = options.MakeOutPath( @"objects.dat" );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( ObjectsFile ) ) )
                 {
@@ -1511,8 +1514,8 @@ namespace ExtractRes
                     y += 16;
                 }
 
-                bmp.Save( @"E:\temp\mapPlayer.png", ImageFormat.Png );
-                objBmp.Save( @"E:\temp\mapObjects.png", ImageFormat.Png );
+                bmp.Save( options.MakeOutPath( @"mapPlayer.png" ), ImageFormat.Png );
+                objBmp.Save( options.MakeOutPath( @"mapObjects.png" ), ImageFormat.Png );
             }
         }
 
@@ -1636,8 +1639,8 @@ namespace ExtractRes
 
                 // finger cursor is among battle sprites - do it as part of menu
 
-                bmp.Save( @"E:\temp\playerSprites.png", ImageFormat.Png );
-                battleBmp.Save( @"E:\temp\battleSprites.png", ImageFormat.Png );
+                bmp.Save( options.MakeOutPath( @"playerSprites.png" ), ImageFormat.Png );
+                battleBmp.Save( options.MakeOutPath( @"battleSprites.png" ), ImageFormat.Png );
             }
         }
 
@@ -1754,10 +1757,10 @@ namespace ExtractRes
                     }
                 }
 
-                bmp.Save( @"E:\temp\backdrops.png", ImageFormat.Png );
+                bmp.Save( options.MakeOutPath( @"backdrops.png" ), ImageFormat.Png );
             }
 
-            File.WriteAllBytes( @"E:\temp\levelBackdrops.dat", levelBackdrops );
+            File.WriteAllBytes( options.MakeOutPath( @"levelBackdrops.dat" ), levelBackdrops );
         }
 
         struct Formation
@@ -1933,7 +1936,7 @@ namespace ExtractRes
                     formations[i].Song = 0;
                 }
 
-                const string FormationFile = @"E:\temp\formations.dat";
+                string FormationFile = options.MakeOutPath( @"formations.dat" );
 
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( FormationFile ) ) )
                 {
@@ -1950,15 +1953,15 @@ namespace ExtractRes
                     }
                 }
 
-                const string NamesFile = @"E:\temp\enemyNames.tab";
+                string NamesFile = options.MakeOutPath( @"enemyNames.tab" );
                 WriteStringTableFile( NamesFile, names );
 
-                const string EnemyAttrFile = @"E:\temp\enemyAttr.dat";
+                string EnemyAttrFile = options.MakeOutPath( @"enemyAttr.dat" );
                 reader.BaseStream.Position = EnemyAttrs;
                 byte[] enemyAttrBuf = reader.ReadBytes( 20 * 128 );
                 File.WriteAllBytes( EnemyAttrFile, enemyAttrBuf );
 
-                const string SpecialNamesFile = @"E:\temp\specialNames.tab";
+                string SpecialNamesFile = options.MakeOutPath( @"specialNames.tab" );
                 string[] specialNames = Text.ReadStringTable(
                     reader,
                     SpecialNamesBase,
@@ -1966,12 +1969,12 @@ namespace ExtractRes
                     26 );
                 WriteStringTableFile( SpecialNamesFile, specialNames );
 
-                const string AttackListsFile = @"E:\temp\attackLists.dat";
+                string AttackListsFile = options.MakeOutPath( @"attackLists.dat" );
                 reader.BaseStream.Position = AttackLists;
                 byte[] attackListBuf = reader.ReadBytes( 16 * 44 );
                 File.WriteAllBytes( AttackListsFile, attackListBuf );
 
-                const string MagicAttrFile = @"E:\temp\magicAttr.dat";
+                string MagicAttrFile = options.MakeOutPath( @"magicAttr.dat" );
                 reader.BaseStream.Position = MagicStats;
                 byte[] magicAttrBuf = reader.ReadBytes( 8 * 64 );
                 // Lock2 should be type 0xE, the same as Lock
@@ -1985,42 +1988,42 @@ namespace ExtractRes
                 magicAttrBuf[8 * 40 + 1] = 2;
                 File.WriteAllBytes( MagicAttrFile, magicAttrBuf );
 
-                const string SpecialAttrFile = @"E:\temp\specialAttr.dat";
+                string SpecialAttrFile = options.MakeOutPath( @"specialAttr.dat" );
                 reader.BaseStream.Position = SpecialStats;
                 byte[] specialAttrBuf = reader.ReadBytes( 8 * 26 );
                 File.WriteAllBytes( SpecialAttrFile, specialAttrBuf );
 
-                const string WeaponAttrFile = @"E:\temp\weaponAttr.dat";
+                string WeaponAttrFile = options.MakeOutPath( @"weaponAttr.dat" );
                 reader.BaseStream.Position = WeaponStats;
                 byte[] weaponAttrBuf = reader.ReadBytes( 8 * 40 );
                 File.WriteAllBytes( WeaponAttrFile, weaponAttrBuf );
 
-                const string ArmorAttrFile = @"E:\temp\armorAttr.dat";
+                string ArmorAttrFile = options.MakeOutPath( @"armorAttr.dat" );
                 reader.BaseStream.Position = ArmorStats;
                 byte[] armorAttrBuf = reader.ReadBytes( 4 * 40 );
                 File.WriteAllBytes( ArmorAttrFile, armorAttrBuf );
 
-                const string WeaponPermsFile = @"E:\temp\weaponPerms.dat";
+                string WeaponPermsFile = options.MakeOutPath( @"weaponPerms.dat" );
                 reader.BaseStream.Position = WeaponPermissions;
                 byte[] weaponPermsBuf = reader.ReadBytes( 2 * 40 );
                 File.WriteAllBytes( WeaponPermsFile, weaponPermsBuf );
 
-                const string ArmorPermsFile = @"E:\temp\armorPerms.dat";
+                string ArmorPermsFile = options.MakeOutPath( @"armorPerms.dat" );
                 reader.BaseStream.Position = ArmorPermissions;
                 byte[] armorPermsBuf = reader.ReadBytes( 2 * 40 );
                 File.WriteAllBytes( ArmorPermsFile, armorPermsBuf );
 
-                const string ArmorTypesFile = @"E:\temp\armorTypes.dat";
+                string ArmorTypesFile = options.MakeOutPath( @"armorTypes.dat" );
                 reader.BaseStream.Position = ArmorTypes;
                 byte[] armorTypesBuf = reader.ReadBytes( 1 * 40 );
                 File.WriteAllBytes( ArmorTypesFile, armorTypesBuf );
 
-                const string MagicPermsFile = @"E:\temp\magicPerms.dat";
+                string MagicPermsFile = options.MakeOutPath( @"magicPerms.dat" );
                 reader.BaseStream.Position = MagicPermissions;
                 byte[] magicPermsBuf = reader.ReadBytes( 8 * 12 );
                 File.WriteAllBytes( MagicPermsFile, magicPermsBuf );
 
-                const string XPFile = @"E:\temp\xp.dat";
+                string XPFile = options.MakeOutPath( @"xp.dat" );
                 reader.BaseStream.Position = LevelXP;
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( XPFile ) ) )
                 {
@@ -2033,13 +2036,13 @@ namespace ExtractRes
                     }
                 }
 
-                const string InitClassFile = @"E:\temp\initClass.dat";
+                string InitClassFile = options.MakeOutPath( @"initClass.dat" );
                 reader.BaseStream.Position = ClassInitStats;
                 byte[] initClassBuf = reader.ReadBytes( 16 * 6 );
                 File.WriteAllBytes( InitClassFile, initClassBuf );
 
                 // items, found money, magic names, class names
-                const string ItemNamesFile = @"E:\temp\itemNames.tab";
+                string ItemNamesFile = options.MakeOutPath( @"itemNames.tab" );
                 string[] itemNames = Text.ReadStringTable( 
                     reader, 
                     ItemNamesBase, 
@@ -2047,7 +2050,7 @@ namespace ExtractRes
                     256 );
                 WriteStringTableFile( ItemNamesFile, itemNames );
 
-                const string ItemTargetFile = @"E:\temp\itemTarget.dat";
+                string ItemTargetFile = options.MakeOutPath( @"itemTarget.dat" );
                 byte[] compactItemTarget = new byte[(itemTarget.Length + 7) / 8];
                 for ( int i = 0; i < itemTarget.Length; i++ )
                 {
@@ -2055,7 +2058,7 @@ namespace ExtractRes
                 }
                 File.WriteAllBytes( ItemTargetFile, compactItemTarget );
 
-                const string MagicTargetFile = @"E:\temp\magicTarget.dat";
+                string MagicTargetFile = options.MakeOutPath( @"magicTarget.dat" );
                 byte[] compactMagicTarget = new byte[(magicTarget.Length + 7) / 8];
                 for ( int i = 0; i < magicTarget.Length; i++ )
                 {
@@ -2063,7 +2066,7 @@ namespace ExtractRes
                 }
                 File.WriteAllBytes( MagicTargetFile, compactMagicTarget );
 
-                const string NesPaletteFile = @"E:\temp\nesColors.dat";
+                string NesPaletteFile = options.MakeOutPath( @"nesColors.dat" );
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( NesPaletteFile ) ) )
                 {
                     foreach ( var color in DefaultSystemPalette.Colors )
@@ -2083,7 +2086,7 @@ namespace ExtractRes
                     bmps[j] = new Bitmap( w, h );
                 }
 
-                const string EnemyPosFile = @"E:\temp\enemyPos.dat";
+                string EnemyPosFile = options.MakeOutPath( @"enemyPos.dat" );
                 using ( BinaryWriter writer = new BinaryWriter( File.OpenWrite( EnemyPosFile ) ) )
                 {
                     for ( int i = 0; i < 128; i++ )
@@ -2183,7 +2186,8 @@ namespace ExtractRes
 
                 for ( int j = 0; j < 16; j++ )
                 {
-                    string filename = string.Format( @"E:\temp\enemies{0:X}.png", j );
+                    string filename = string.Format( @"enemies{0:X}.png", j );
+                    filename = options.MakeOutPath( filename );
                     bmps[j].Save( filename, ImageFormat.Png );
                 }
             }
