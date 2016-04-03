@@ -52,6 +52,12 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Text.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ExtractNsf\ExtractNsf.vcxproj">
+      <Project>{F22EEC24-C748-4758-9F14-265932295F98}</Project>
+      <Name>ExtractNsf</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

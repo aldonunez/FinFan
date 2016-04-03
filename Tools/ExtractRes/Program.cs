@@ -951,7 +951,7 @@ namespace ExtractRes
             return new LoopPoints() { Begin = loopBeginFrames, End = runningFrames };
         }
 
-        private static void ExtractSongs( Options options )
+        private static LoopPoints[] ExtractLoopPoints( Options options )
         {
             using ( BinaryReader reader = new BinaryReader( File.OpenRead( options.RomPath ) ) )
             {
@@ -975,6 +975,7 @@ namespace ExtractRes
                 reader.BaseStream.Position = 0x37369;
                 byte[] noteLenghts = reader.ReadBytes( 16 * 6 );
 
+                LoopPoints[] pointPairs = new LoopPoints[24];
                 string LoopFile = options.MakeOutPath( @"loopPoints.dat" );
                 using ( BinaryWriter writer = new BinaryWriter( File.Create( LoopFile ) ) )
                 {
@@ -988,10 +989,99 @@ namespace ExtractRes
                             square2Ptr,
                             trianglePtr,
                             i );
+                        pointPairs[i] = loopPoints;
 
                         writer.Write( (short) loopPoints.Begin );
                         writer.Write( (short) loopPoints.End );
                     }
+                }
+                return pointPairs;
+            }
+        }
+
+        class SoundItem
+        {
+            public short Track;
+            public short Begin;
+            public short End;
+            public string Filename;
+        }
+
+        private static void ExtractSongs( Options options )
+        {
+            string[] songFilenames = 
+            {
+                "01_prelude.wav",
+                "02_opening.wav",
+                "03_ending.wav",
+                "04_field.wav",
+                "05_ship.wav",
+                "06_airship.wav",
+                "07_town.wav",
+                "08_castle.wav",
+                "09_volcano.wav",
+                "10_matoya.wav",
+                "11_dungeon.wav",
+                "12_temple.wav",
+                "13_sky.wav",
+                "14_sea_shrine.wav",
+                "15_shop.wav",
+                "16_battle.wav",
+                "17_menu.wav",
+                "18_dead.wav",
+                "19_victory.wav",
+                "20_fanfare.wav",
+                "21_unknown.wav",
+                "22_save.wav",
+                "23_unknown.wav"
+            };
+
+            LoopPoints[] loopPoints = ExtractLoopPoints( options );
+            for ( int i = 0; i < loopPoints.Length; i++ )
+            {
+                if ( i == songFilenames.Length )
+                    break;
+
+                SoundItem item = new SoundItem();
+                item.Track = (short) i;
+                item.Filename = songFilenames[i];
+                item.Begin = (short) loopPoints[i].Begin;
+                item.End = (short) loopPoints[i].End;
+                ExtractSoundFile( options, item );
+            }
+        }
+
+        private static void ExtractSoundFile( Options options, SoundItem item )
+        {
+            const int SampleRate = 44100;
+            const double SampleRateMs = SampleRate / 1000.0;
+            const double MillisecondsAFrame = 1000.0 / 60.0;
+
+            if ( string.IsNullOrEmpty( options.NsfPath ) )
+                throw new Exception( "An NSF file is needed to extract sound files." );
+
+            string outPath = options.MakeOutPath( item.Filename );
+            using ( ExtractNsf.NsfEmu emu = new ExtractNsf.NsfEmu() )
+            using ( ExtractNsf.WaveWriter waveWriter = new ExtractNsf.WaveWriter( SampleRate, outPath ) )
+            {
+                emu.SampleRate = SampleRate;
+                emu.LoadFile( options.NsfPath );
+                emu.StartTrack( item.Track );
+
+                waveWriter.EnableStereo();
+
+                short[] buffer = new short[1024];
+                int limit = (int) (item.End * MillisecondsAFrame);
+                while ( emu.Tell < limit )
+                {
+                    int count = buffer.Length;
+                    int samplesRem = (int) (SampleRateMs * (limit - emu.Tell));
+                    if ( samplesRem < count )
+                    {
+                        count = (int) ((samplesRem + 1) & 0xFFFFFFFE);
+                    }
+                    emu.Play( count, buffer );
+                    waveWriter.Write( buffer, count, 1 );
                 }
             }
         }
