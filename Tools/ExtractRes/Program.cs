@@ -168,8 +168,13 @@ namespace ExtractRes
                 PlayerExtractor.Extract( options );
                 break;
 
-            case "sound":
+            case "song":
                 ExtractSongs( options );
+                break;
+
+            case "sfx":
+                SoundExtractor.MakeSfxNsf( options );
+                ExtractSoundEffects( options );
                 break;
 
             case "menu":
@@ -1047,6 +1052,49 @@ namespace ExtractRes
                 item.Filename = songFilenames[i];
                 item.Begin = (short) loopPoints[i].Begin;
                 item.End = (short) loopPoints[i].End;
+                ExtractSoundFile( options, item );
+            }
+
+            File.Copy( 
+                options.MakeOutPath( "23_unknown.wav" ), 
+                options.MakeOutPath( "ff1-sfx-potion.wav" ), 
+                true );
+        }
+
+        struct SfxFileDesc
+        {
+            public string Filename;
+            public int Track;
+            public ushort End;
+        }
+
+        private static void ExtractSoundEffects( Options options )
+        {
+            SfxFileDesc[] effects = 
+            {
+                new SfxFileDesc { Filename = "ff1-sfx-confirm.wav", Track = 0, End = 31 },
+                new SfxFileDesc { Filename = "ff1-sfx-cursor.wav", Track = 1, End = 16 },
+                new SfxFileDesc { Filename = "ff1-sfx-door.wav", Track = 7, End = 0x25 },
+                new SfxFileDesc { Filename = "ff1-sfx-error.wav", Track = 14, End = 16 },
+                new SfxFileDesc { Filename = "ff1-sfx-fight.wav", Track = 12, End = 0x41 },
+                new SfxFileDesc { Filename = "ff1-sfx-hurt.wav", Track = 18, End = 0xF },
+                new SfxFileDesc { Filename = "ff1-sfx-magic.wav", Track = 17, End = 0x3C },
+                //new SfxFileDesc { Filename = "ff1-sfx-potion.wav", Track = 3 },
+                new SfxFileDesc { Filename = "ff1-sfx-step.wav", Track = 6, End = 5 },
+                new SfxFileDesc { Filename = "ff1-sfx-strike.wav", Track = 19, End = 0xC },
+                new SfxFileDesc { Filename = "ff1-sfx-ship.wav", Track = 4, End = 60 * 4 },
+                new SfxFileDesc { Filename = "ff1-sfx-lift.wav", Track = 15, End = 0x21 * 2 },
+                new SfxFileDesc { Filename = "ff1-sfx-land.wav", Track = 16, End = 0x21 * 2 },
+                new SfxFileDesc { Filename = "ff1-sfx-airship.wav", Track = 3, End = 60 * 3 },
+            };
+
+            for ( int i = 0; i < effects.Length; i++ )
+            {
+                SoundItem item = new SoundItem();
+                item.Track = (short) effects[i].Track;
+                item.Filename = effects[i].Filename;
+                item.Begin = 0;
+                item.End = (short) effects[i].End;
                 ExtractSoundFile( options, item );
             }
         }
