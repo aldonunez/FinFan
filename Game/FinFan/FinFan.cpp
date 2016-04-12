@@ -168,6 +168,7 @@ static void Run()
     ALLEGRO_EVENT_SOURCE* keyboardSource = al_get_keyboard_event_source();
     ALLEGRO_EVENT_SOURCE* displaySource = al_get_display_event_source( display );
     double startTime = al_get_time();
+    double waitSpan = 0;
 
     if ( keyboardSource == nullptr )
         return;
@@ -185,13 +186,16 @@ static void Run()
 
     while ( !done )
     {
-        if ( !al_is_event_queue_empty( eventQ ) )
+        while ( al_wait_for_event_timed( eventQ, &event, waitSpan ) )
         {
-            al_wait_for_event( eventQ, &event );
+            waitSpan = 0;
             if ( event.any.type == ALLEGRO_EVENT_DISPLAY_CLOSE
                 || (event.any.type == ALLEGRO_EVENT_KEY_DOWN 
                 && event.keyboard.keycode == ALLEGRO_KEY_ESCAPE) )
+            {
                 done = true;
+                break;
+            }
             else if ( event.any.type == ALLEGRO_EVENT_DISPLAY_RESIZE )
             {
                 al_acknowledge_resize( display );
@@ -223,6 +227,12 @@ static void Run()
 
             al_flip_display();
         }
+
+        double timeLeft = startTime + FrameTime - al_get_time();
+        if ( timeLeft >= .002 )
+            waitSpan = timeLeft - .001;
+        else
+            waitSpan = 0;
     }
 }
 
