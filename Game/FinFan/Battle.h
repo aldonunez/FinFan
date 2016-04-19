@@ -215,4 +215,66 @@ namespace Battle
     Bounds deadFrames[];
 
     Sprite* playerSprites[];
+
+
+    enum EncounterType
+    {
+        Encounter_Normal,
+        Encounter_PlayerFirst,
+        Encounter_EnemyFirst,
+    };
+
+    struct ColorInt24
+    {
+        uint8_t Blue;
+        uint8_t Green;
+        uint8_t Red;
+    };
+
+    const int MaxActors = MaxEnemies + Players;
+
+    void UpdateAllIdleSprites();
+    void UpdateIdleSprites();
+    void UpdateIdleSprite( int playerId );
+    void LeaveBattle();
+
+    extern Formation       formations[128];
+    extern EnemyAttr       enemyAttrs[128];
+    extern AttackList      attackLists[44];
+    extern Enemy       enemies[9];
+    extern int         enemyCount;
+    extern EncounterType gEncounter;
+    extern char gMessage[256];
+    extern Menu*       activeMenu;
+    extern int gFormationId;
+
+    extern ActionResult actionResults[9+Players];
+    extern int resultCount;
+    extern ActionResult& strikeResult;
+
+    class Effect
+    {
+    public:
+        virtual void Update() = 0;
+        virtual void Draw() = 0;
+    };
+
+    extern bool gShowFullScreenColor;
+    extern bool gShowBackgroundColor;
+    extern ALLEGRO_COLOR gFullScreenColor;
+    extern bool gShowWeapon;
+    extern Sprite* weaponSprite;
+    extern Effect* magicEffects[9];
+    extern Effect* curEffect;
+    extern ALLEGRO_BITMAP* battleSprites;
+    extern ColorInt24      nesColors[64];
+
+    extern Bounds16 weaponFrames[2];
+    extern Bounds16 punchFrames[2];
+    extern Bounds16 spellFrames[2];
+
+    // BattleStates
+    extern Command     commands[Players];
+    extern int         shuffledActors[MaxActors];
+    extern Command     curCmd;
 }

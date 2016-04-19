@@ -88,8 +88,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Battle.h" />
+    <ClInclude Include="BattleCalc.h" />
+    <ClInclude Include="BattleEffects.h" />
     <ClInclude Include="BattleMenus.h" />
     <ClInclude Include="BattleMod.h" />
+    <ClInclude Include="BattleStates.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="Config.h" />
     <ClInclude Include="Dialog.h" />
@@ -118,17 +121,22 @@
     <ClInclude Include="StoryScenes.h" />
     <ClInclude Include="Text.h" />
     <ClInclude Include="Title.h" />
+    <ClInclude Include="Utility.h" />
     <ClInclude Include="VehicleSprites.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Battle.cpp" />
+    <ClCompile Include="BattleCalc.cpp" />
+    <ClCompile Include="BattleEffects.cpp" />
     <ClCompile Include="BattleMenus.cpp" />
+    <ClCompile Include="BattleStates.cpp" />
     <ClCompile Include="Common.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Dialog.cpp" />
+    <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="FlyerSprite.cpp" />
     <ClCompile Include="Input.cpp" />
     <ClCompile Include="ItemMenu.cpp" />
