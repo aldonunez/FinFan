@@ -138,7 +138,8 @@ Target SwitchParty( Target target )
     }
 }
 
-void MakeEnemyAction( int id, int totalLevel, int* livingPlayerIds, int livingPlayerCount )
+void MakeEnemyAction( int id, int totalLevel, int* livingPlayerIds, int livingPlayerCount, 
+    Command& curCmd )
 {
     Enemy& enemy = enemies[id];
     int type = enemies[id].Type;
@@ -232,14 +233,13 @@ void GetWeightedPlayers( const int* playerIds, int playerCount, int* weightedPla
     }
 }
 
-void MakeEnemyAction( int actorIndex )
+void MakeEnemyAction( int enemyId, Command& curCmd )
 {
     int livingPlayerIds[Player::PartySize];
     int livingPlayerCount = 0;
     int weightedPlayerIds[PlayerWeights];
     int weightedPlayerCount = 0;
     int totalLevel = 0;
-    int enemyId = shuffledActors[actorIndex];
 
     GetLivingPlayers( livingPlayerIds, livingPlayerCount );
 
@@ -252,12 +252,11 @@ void MakeEnemyAction( int actorIndex )
 
     GetWeightedPlayers( livingPlayerIds, livingPlayerCount, weightedPlayerIds, weightedPlayerCount );
 
-    MakeEnemyAction( enemyId, totalLevel, weightedPlayerIds, weightedPlayerCount );
+    MakeEnemyAction( enemyId, totalLevel, weightedPlayerIds, weightedPlayerCount, curCmd );
 }
 
-bool TryRecoverConfuse( int actorIndex )
+bool TryRecoverConfuse( int enemyId )
 {
-    int enemyId = shuffledActors[actorIndex];
     Enemy& enemy = enemies[enemyId];
 
     int r = GetNextRandom( 100 );
@@ -270,10 +269,8 @@ bool TryRecoverConfuse( int actorIndex )
     return false;
 }
 
-void MakeConfuseAction( int actorIndex )
+void MakeConfuseAction( int enemyId, Command& curCmd )
 {
-    int enemyId = shuffledActors[actorIndex];
-
     curCmd.action = Action_Magic;
     curCmd.actorParty = Party_Enemies;
     curCmd.actorIndex = enemyId;
@@ -313,7 +310,7 @@ bool IsMute( Party party, int index )
     }
 }
 
-void MakeDisabledPlayerActions()
+void MakeDisabledPlayerActions( Command* commands )
 {
     for ( int i = 0; i < Player::PartySize; i++ )
     {
@@ -329,7 +326,9 @@ void MakeDisabledPlayerActions()
 }
 
 
-// ALDO: Physical Damage
+//----------------------------------------------------------------------------
+// Physical
+//----------------------------------------------------------------------------
 
 int GetHitChance( Actor* actor, Actor* target )
 {
@@ -443,9 +442,9 @@ void CalcPhysDamage( Actor* actor, Actor* target )
     strikeResult.CritHit = critHit;
 }
 
-void CalcPlayerPhysDamage()
+void CalcPlayerPhysDamage( const Command& curCmd )
 {
-    Command& cmd = curCmd;
+    const Command& cmd = curCmd;
     Player::Character& actor = Player::Party[ cmd.actorIndex ];
     int enemyId = cmd.targetIndex;
     int i = 0;
@@ -484,9 +483,9 @@ void CalcPlayerPhysDamage()
     strikeResult.DealtDamage = true;
 }
 
-void CalcEnemyPhysDamage()
+void CalcEnemyPhysDamage( const Command& curCmd )
 {
-    Command& cmd = curCmd;
+    const Command& cmd = curCmd;
     Enemy& actor = enemies[ cmd.actorIndex ];
     int playerId = cmd.targetIndex;
     int i = 0;
@@ -505,7 +504,9 @@ void CalcEnemyPhysDamage()
 }
 
 
-// ALDO: Magic
+//----------------------------------------------------------------------------
+// Magic
+//----------------------------------------------------------------------------
 
 void ApplyMagicToEnemy( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFunc, int index )
 {
@@ -592,19 +593,14 @@ void CalcMagicEffect( const Command& cmd )
     }
 }
 
-void CalcMagicEffect()
+
+//----------------------------------------------------------------------------
+// Item
+//----------------------------------------------------------------------------
+
+void CalcItemEffect( const Command& curCmd )
 {
-    Command& cmd = curCmd;
-
-    CalcMagicEffect( cmd );
-}
-
-
-// ALDO: Item
-
-void CalcItemEffect()
-{
-    Command& cmd = curCmd;
+    const Command& cmd = curCmd;
     Command magicCmd = cmd;
     int spellId = Player::GetSpellForItem( cmd.actionId );
 
@@ -679,7 +675,7 @@ void CalcPlayerAutoHP()
     }
 }
 
-bool CanRunAway()
+bool CanRunAway( const Command& curCmd )
 {
     // formation doesn't allow running
     if ( (formations[gFormationId].Flags & Formation_CantRun) != 0 )
@@ -689,18 +685,12 @@ bool CanRunAway()
     if ( gEncounter == Encounter_PlayerFirst )
         return true;
 
-    Command& cmd = curCmd;
+    const Command& cmd = curCmd;
     int playerId = cmd.actorIndex;
     Player::Character& player = Player::Party[playerId];
     int r = GetNextRandom( player.level + 15 + 1 );
 
     return r < player.basicStats[Player::Stat_Luck];
-}
-
-void PrepActions()
-{
-    MakeDisabledPlayerActions();
-    ShuffleActors();
 }
 
 int CalcNextLevelUp( int prevPlayerId )
@@ -716,21 +706,19 @@ int CalcNextLevelUp( int prevPlayerId )
     return i;
 }
 
-void CommitCommand( int index )
+void CommitCommand( Command& cmd )
 {
-    Command& cmd = commands[index];
     if ( cmd.action == Action_Item )
         Player::SpendItem( cmd.actionId );
 }
 
-void UndoCommand( int index )
+void UndoCommand( Command& cmd )
 {
-    Command& cmd = commands[index];
     if ( cmd.action == Action_Item )
         Player::ReturnItem( cmd.actionId );
 }
 
-void UndoAllCommands()
+void UndoAllCommands( Command* commands )
 {
     for ( int i = 0; i < Player::PartySize; i++ )
     {

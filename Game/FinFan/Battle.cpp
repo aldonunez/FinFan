@@ -303,11 +303,7 @@ void Init( int formationId, int backdropId )
 
     gEncounter = GetNextEncounterType();
 
-    if ( gEncounter == Encounter_Normal )
-        GotoFirstMenu();
-    else
-        GotoOpeningMessage();
-
+    GotoFirstState();
     Sound::PlayTrack( Sound_Battle, 0, true );
 }
 

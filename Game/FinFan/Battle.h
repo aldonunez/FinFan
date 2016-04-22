@@ -231,6 +231,13 @@ namespace Battle
         uint8_t Red;
     };
 
+    class Effect
+    {
+    public:
+        virtual void Update() = 0;
+        virtual void Draw() = 0;
+    };
+
     const int MaxActors = MaxEnemies + Players;
 
     void UpdateAllIdleSprites();
@@ -241,24 +248,24 @@ namespace Battle
     extern Formation       formations[128];
     extern EnemyAttr       enemyAttrs[128];
     extern AttackList      attackLists[44];
+    extern ColorInt24      nesColors[64];
+    extern ALLEGRO_BITMAP* battleSprites;
+
+    extern Bounds16 weaponFrames[2];
+    extern Bounds16 punchFrames[2];
+    extern Bounds16 spellFrames[2];
+
     extern Enemy       enemies[9];
     extern int         enemyCount;
     extern EncounterType gEncounter;
-    extern char gMessage[256];
-    extern Menu*       activeMenu;
     extern int gFormationId;
 
     extern ActionResult actionResults[9+Players];
     extern int resultCount;
     extern ActionResult& strikeResult;
 
-    class Effect
-    {
-    public:
-        virtual void Update() = 0;
-        virtual void Draw() = 0;
-    };
-
+    extern Menu*       activeMenu;
+    extern char gMessage[256];
     extern bool gShowFullScreenColor;
     extern bool gShowBackgroundColor;
     extern ALLEGRO_COLOR gFullScreenColor;
@@ -266,15 +273,4 @@ namespace Battle
     extern Sprite* weaponSprite;
     extern Effect* magicEffects[9];
     extern Effect* curEffect;
-    extern ALLEGRO_BITMAP* battleSprites;
-    extern ColorInt24      nesColors[64];
-
-    extern Bounds16 weaponFrames[2];
-    extern Bounds16 punchFrames[2];
-    extern Bounds16 spellFrames[2];
-
-    // BattleStates
-    extern Command     commands[Players];
-    extern int         shuffledActors[MaxActors];
-    extern Command     curCmd;
 }

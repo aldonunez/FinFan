@@ -81,6 +81,14 @@ void UpdateState()
     curUpdate();
 }
 
+void GotoFirstState()
+{
+    if ( gEncounter == Encounter_Normal )
+        GotoFirstMenu();
+    else
+        GotoOpeningMessage();
+}
+
 void UpdateOpeningMessage()
 {
     if ( gTimer == 0 )
@@ -219,18 +227,18 @@ void UpdateCloseMenu()
 
         if ( gNextPlayerId == NoneIndex )
         {
-            UndoAllCommands();
+            UndoAllCommands( commands );
             GotoFirstCommand();
         }
         else
         {
             if ( gNextPlayerId > curActorIndex )
             {
-                CommitCommand( curActorIndex );
+                CommitCommand( commands[curActorIndex] );
             }
             else if ( gNextPlayerId < curActorIndex )
             {
-                UndoCommand( gNextPlayerId );
+                UndoCommand( commands[gNextPlayerId] );
             }
 
             GotoOpenMenu( gNextPlayerId );
@@ -712,7 +720,7 @@ void GotoRunCommand()
             GotoEngage();
         else if ( curCmd.action == Action_Run )
         {
-            if ( CanRunAway() )
+            if ( CanRunAway( curCmd ) )
                 GotoRunAway();
             else
                 GotoRunAwayFailed();
@@ -733,17 +741,17 @@ void GotoRunCommand()
             GotoTryRecoverDisabling();
         else if ( (enemy.Status & Status_Confusion) != 0 )
         {
-            if ( TryRecoverConfuse( curActorIndex ) )
+            if ( TryRecoverConfuse( shuffledActors[curActorIndex] ) )
                 GotoNextCommand();
             else
             {
-                MakeConfuseAction( curActorIndex );
+                MakeConfuseAction( shuffledActors[curActorIndex], curCmd );
                 GotoEnemyEngage();
             }
         }
         else
         {
-            MakeEnemyAction( curActorIndex );
+            MakeEnemyAction( shuffledActors[curActorIndex], curCmd );
             GotoEnemyEngage();
         }
     }
@@ -1027,7 +1035,7 @@ void GotoPlayerFight()
     gTimer = 32;
     gShowWeapon = true;
 
-    CalcPlayerPhysDamage();
+    CalcPlayerPhysDamage( curCmd );
 
     if ( !strikeResult.Missed )
     {
@@ -1100,7 +1108,7 @@ void GotoEnemyFight()
 
     gTimer = 32;
 
-    CalcEnemyPhysDamage();
+    CalcEnemyPhysDamage( curCmd );
 
     if ( !strikeResult.Missed )
     {
@@ -1159,7 +1167,7 @@ void GotoPlayerMagicEffect()
 
     if ( !IsMute( cmd.actorParty, cmd.actorIndex ) )
     {
-        CalcMagicEffect();
+        CalcMagicEffect( curCmd );
 
         if ( cmd.actorParty == Party_Players )
         {
@@ -1281,7 +1289,7 @@ void UpdatePlayerItem()
     {
         if ( gTimer == 30 )
         {
-            CalcItemEffect();
+            CalcItemEffect( curCmd );
 
             Player::SpendItem( itemId );
 
@@ -1342,6 +1350,12 @@ Command& GetCommandBuilder()
 
 void AddCommand( const Command& cmd )
 {
+}
+
+void PrepActions()
+{
+    MakeDisabledPlayerActions( commands );
+    ShuffleActors();
 }
 
 }

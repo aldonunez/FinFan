@@ -10,7 +10,6 @@
 
 namespace Battle
 {
+    void GotoFirstState();
     void UpdateState();
-    void GotoOpeningMessage();
-    void GotoFirstMenu();
 }

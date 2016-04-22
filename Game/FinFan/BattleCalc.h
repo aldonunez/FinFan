@@ -11,19 +11,20 @@
 namespace Battle
 {
     enum EncounterType;
+    struct Command;
 
     int FindNextActivePlayer( int prevPlayer );
     int FindPrevActivePlayer( int nextPlayer );
-    void MakeDisabledPlayerActions();
+    void MakeDisabledPlayerActions( Command* commands );
     void ShuffleActors();
     EncounterType GetNextEncounterType();
-    bool CanRunAway();
-    void UndoAllCommands();
-    void CommitCommand( int index );
-    void UndoCommand( int index );
-    bool TryRecoverConfuse( int actorIndex );
-    void MakeConfuseAction( int actorIndex );
-    void MakeEnemyAction( int actorIndex );
+    bool CanRunAway( const Command& curCmd );
+    void UndoAllCommands( Command* commands );
+    void CommitCommand( Command& cmd );
+    void UndoCommand( Command& cmd );
+    bool TryRecoverConfuse( int enemyId );
+    void MakeConfuseAction( int enemyId, Command& curCmd );
+    void MakeEnemyAction( int enemyId, Command& curCmd );
     int CalcNextLevelUp( int prevPlayerId );
     bool HasLost();
     bool HasWon();
@@ -32,9 +33,9 @@ namespace Battle
     void PrepActions();
     void ResetRunningCommands();
     bool AreCommandsFinished();
-    void CalcPlayerPhysDamage();
-    void CalcEnemyPhysDamage();
-    void CalcMagicEffect();
-    void CalcItemEffect();
+    void CalcPlayerPhysDamage( const Command& curCmd );
+    void CalcEnemyPhysDamage( const Command& curCmd );
+    void CalcMagicEffect( const Command& curCmd );
+    void CalcItemEffect( const Command& curCmd );
     bool IsMute( Party party, int index );
 }
