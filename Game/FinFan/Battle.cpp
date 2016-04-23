@@ -24,7 +24,7 @@ namespace Battle
     void Update();
     void Draw();
     void MakeEnemies();
-    void MakeMixedEnemies( const ::Point* places, int maxPlaces, int placeWidth );
+    void MakeOneSizeEnemies( const ::Point* places, int maxPlaces, int placeWidth );
 }
 
 
@@ -289,7 +289,6 @@ void Init( int formationId, int backdropId )
 
     for ( int i = 0; i < Player::PartySize; i++ )
     {
-        int rowY = Player::Party[i]._class * PlayerSpriteRowHeight;
         playerSprites[i] = new Sprite( playerImages );
         playerSprites[i]->SetX( PartyX );
         playerSprites[i]->SetY( PartyY + i * PlayerSpriteRowHeight );
@@ -621,19 +620,19 @@ void MakeEnemies()
     switch ( formation->Type )
     {
     case FormType_Big:
-        MakeMixedEnemies( sBigEnemyPos, _countof( sBigEnemyPos ), BigEnemyWidth );
+        MakeOneSizeEnemies( sBigEnemyPos, _countof( sBigEnemyPos ), BigEnemyWidth );
         break;
 
     case FormType_Small:
-        MakeMixedEnemies( sSmallEnemyPos, _countof( sSmallEnemyPos ), SmallEnemyWidth );
+        MakeOneSizeEnemies( sSmallEnemyPos, _countof( sSmallEnemyPos ), SmallEnemyWidth );
         break;
 
     case FormType_Mixed:
-        MakeMixedEnemies( sMixedEnemyPosBig, _countof( sMixedEnemyPosBig ), BigEnemyWidth );
+        MakeOneSizeEnemies( sMixedEnemyPosBig, _countof( sMixedEnemyPosBig ), BigEnemyWidth );
         // the mixed enemy map depends on small enemies starting at index 3
         bigEnemyCount = enemyCount;
         enemyCount = 3;
-        MakeMixedEnemies( sMixedEnemyPosSmall, _countof( sMixedEnemyPosSmall ), SmallEnemyWidth );
+        MakeOneSizeEnemies( sMixedEnemyPosSmall, _countof( sMixedEnemyPosSmall ), SmallEnemyWidth );
         enemyCount = enemyCount - (3 - bigEnemyCount);
         break;
 
@@ -711,7 +710,7 @@ void MakeCenteredEnemy()
     MakeOneEnemy( place, type );
 }
 
-void MakeMixedEnemies( const ::Point* places, int maxPlaces, int placeWidth )
+void MakeOneSizeEnemies( const ::Point* places, int maxPlaces, int placeWidth )
 {
     Formation* formation = &formations[gFormationId];
     uint8_t* set = nullptr;
