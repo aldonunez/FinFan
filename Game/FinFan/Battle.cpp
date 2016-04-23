@@ -116,9 +116,6 @@ char gMessage[256];
 
 bool gShowWeapon;
 Sprite* weaponSprite;
-ActionResult actionResults[9+Players];
-ActionResult& strikeResult = actionResults[0];
-int resultCount;
 
 
 Effect* curEffect;
@@ -390,21 +387,6 @@ void UpdateIdleSprite( int index )
     sprite->SetFrames( frames, _class * PlayerSpriteHeight );
 }
 
-void UpdateIdleSprites()
-{
-    for ( int i = 0; i < resultCount; i++ )
-    {
-        // If we allow a player to die during his turn, then it'll have to wait until after
-        // the disengage. For now it's not allowed, so they all die at the same time.
-
-        int index = actionResults[i].TargetIndex;
-        if ( actionResults[i].TargetParty == Party_Players )
-        {
-            UpdateIdleSprite( index );
-        }
-    }
-}
-
 void UpdateAllIdleSprites()
 {
     for ( int i = 0; i < Player::PartySize; i++ )
@@ -557,7 +539,7 @@ void Draw()
         curEffect->Draw();
     }
 
-    for ( int i = 0; i < resultCount; i++ )
+    for ( int i = 0; i < GetResultCount(); i++ )
     {
         if ( magicEffects[i] != nullptr )
             magicEffects[i]->Draw();

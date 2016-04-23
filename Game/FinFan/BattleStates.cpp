@@ -49,6 +49,10 @@ int gGWon;
 int gWonState;
 int gLevelUpPlayerId;
 
+ActionResult actionResults[MaxActors];
+ActionResult& strikeResult = actionResults[0];
+int resultCount;
+
 
 void GotoFirstMenu();
 void GotoFirstCommand();
@@ -64,6 +68,10 @@ void GotoPlayerFight();
 void GotoPlayerItem();
 void GotoPlayerCastMagic();
 void GotoDisengage();
+void PrepActions();
+void ResetRunningCommands();
+bool AreCommandsFinished();
+void UpdateAffectedIdleSprites();
 
 
 int FindNextActivePlayer()
@@ -388,13 +396,13 @@ void GotoAutoHP()
 {
     resultCount = 0;
 
-    CalcEnemyAutoHP();
+    CalcEnemyAutoHP( actionResults, resultCount );
 
     // if all enemies die by poison, then the battle was won,
     // even if players could have died by poison
 
     if ( !HasWon() )
-        CalcPlayerAutoHP();
+        CalcPlayerAutoHP( actionResults, resultCount );
 
     if ( resultCount > 0 )
     {
@@ -859,7 +867,7 @@ void UpdateNumbers()
                 enemyDied = true;
         }
 
-        UpdateIdleSprites();
+        UpdateAffectedIdleSprites();
 
         if ( enemyDied )
             GotoEnemyDie();
@@ -1035,7 +1043,7 @@ void GotoPlayerFight()
     gTimer = 32;
     gShowWeapon = true;
 
-    CalcPlayerPhysDamage( curCmd );
+    CalcPlayerPhysDamage( curCmd, strikeResult, resultCount );
 
     if ( !strikeResult.Missed )
     {
@@ -1108,7 +1116,7 @@ void GotoEnemyFight()
 
     gTimer = 32;
 
-    CalcEnemyPhysDamage( curCmd );
+    CalcEnemyPhysDamage( curCmd, strikeResult, resultCount );
 
     if ( !strikeResult.Missed )
     {
@@ -1167,7 +1175,7 @@ void GotoPlayerMagicEffect()
 
     if ( !IsMute( cmd.actorParty, cmd.actorIndex ) )
     {
-        CalcMagicEffect( curCmd );
+        CalcMagicEffect( curCmd, actionResults, resultCount );
 
         if ( cmd.actorParty == Party_Players )
         {
@@ -1289,7 +1297,7 @@ void UpdatePlayerItem()
     {
         if ( gTimer == 30 )
         {
-            CalcItemEffect( curCmd );
+            CalcItemEffect( curCmd, actionResults, resultCount );
 
             Player::SpendItem( itemId );
 
@@ -1356,6 +1364,26 @@ void PrepActions()
 {
     MakeDisabledPlayerActions( commands );
     ShuffleActors();
+}
+
+void UpdateAffectedIdleSprites()
+{
+    for ( int i = 0; i < resultCount; i++ )
+    {
+        // If we allow a player to die during his turn, then it'll have to wait until after
+        // the disengage. For now it's not allowed, so they all die at the same time.
+
+        int index = actionResults[i].TargetIndex;
+        if ( actionResults[i].TargetParty == Party_Players )
+        {
+            UpdateIdleSprite( index );
+        }
+    }
+}
+
+int GetResultCount()
+{
+    return resultCount;
 }
 
 }

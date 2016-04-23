@@ -16,7 +16,6 @@ namespace Battle
     int FindNextActivePlayer( int prevPlayer );
     int FindPrevActivePlayer( int nextPlayer );
     void MakeDisabledPlayerActions( Command* commands );
-    void ShuffleActors();
     EncounterType GetNextEncounterType();
     bool CanRunAway( const Command& curCmd );
     void UndoAllCommands( Command* commands );
@@ -28,14 +27,11 @@ namespace Battle
     int CalcNextLevelUp( int prevPlayerId );
     bool HasLost();
     bool HasWon();
-    void CalcEnemyAutoHP();
-    void CalcPlayerAutoHP();
-    void PrepActions();
-    void ResetRunningCommands();
-    bool AreCommandsFinished();
-    void CalcPlayerPhysDamage( const Command& curCmd );
-    void CalcEnemyPhysDamage( const Command& curCmd );
-    void CalcMagicEffect( const Command& curCmd );
-    void CalcItemEffect( const Command& curCmd );
+    void CalcEnemyAutoHP( ActionResult* actionResults, int& resultCount );
+    void CalcPlayerAutoHP( ActionResult* actionResults, int& resultCount );
+    void CalcPlayerPhysDamage( const Command& curCmd, ActionResult& strikeResult, int& resultCount );
+    void CalcEnemyPhysDamage( const Command& curCmd, ActionResult& strikeResult, int& resultCount );
+    void CalcMagicEffect( const Command& curCmd, ActionResult* actionResults, int& resultCount );
+    void CalcItemEffect( const Command& curCmd, ActionResult* actionsResults, int& resultCount );
     bool IsMute( Party party, int index );
 }

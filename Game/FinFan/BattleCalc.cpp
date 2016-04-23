@@ -370,7 +370,7 @@ int GetStatusChance( Actor* actor, Actor* target )
     return chance;
 }
 
-void CalcPhysDamage( Actor* actor, Actor* target )
+void CalcPhysDamage( Actor* actor, Actor* target, ActionResult& strikeResult )
 {
     bool missed = false;
     int totalDamage = 0;
@@ -442,7 +442,7 @@ void CalcPhysDamage( Actor* actor, Actor* target )
     strikeResult.CritHit = critHit;
 }
 
-void CalcPlayerPhysDamage( const Command& curCmd )
+void CalcPlayerPhysDamage( const Command& curCmd, ActionResult& strikeResult, int& resultCount )
 {
     const Command& cmd = curCmd;
     Player::Character& actor = Player::Party[ cmd.actorIndex ];
@@ -475,7 +475,7 @@ void CalcPlayerPhysDamage( const Command& curCmd )
 
     enemy = &enemies[enemyId];
 
-    CalcPhysDamage( &actor, enemy );
+    CalcPhysDamage( &actor, enemy, strikeResult );
 
     resultCount = 1;
     strikeResult.TargetIndex = enemyId;
@@ -483,7 +483,7 @@ void CalcPlayerPhysDamage( const Command& curCmd )
     strikeResult.DealtDamage = true;
 }
 
-void CalcEnemyPhysDamage( const Command& curCmd )
+void CalcEnemyPhysDamage( const Command& curCmd, ActionResult& strikeResult, int& resultCount )
 {
     const Command& cmd = curCmd;
     Enemy& actor = enemies[ cmd.actorIndex ];
@@ -495,7 +495,7 @@ void CalcEnemyPhysDamage( const Command& curCmd )
 
     player = &Player::Party[playerId];
 
-    CalcPhysDamage( &actor, player );
+    CalcPhysDamage( &actor, player, strikeResult );
 
     resultCount = 1;
     strikeResult.TargetIndex = playerId;
@@ -508,7 +508,8 @@ void CalcEnemyPhysDamage( const Command& curCmd )
 // Magic
 //----------------------------------------------------------------------------
 
-void ApplyMagicToEnemy( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFunc, int index )
+void ApplyMagicToEnemy( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFunc, int index,
+    ActionResult* actionResults, int& resultCount )
 {
     calcFunc( magicAttr, &enemies[index], actionResults[resultCount] );
 
@@ -520,7 +521,8 @@ void ApplyMagicToEnemy( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFu
     resultCount++;
 }
 
-void ApplyMagicToPlayer( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFunc, int index )
+void ApplyMagicToPlayer( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFunc, int index,
+    ActionResult* actionResults, int& resultCount)
 {
     calcFunc( magicAttr, &Player::Party[index], actionResults[resultCount] );
 
@@ -539,7 +541,7 @@ Player::MagicAttr& GetMagicAttr( const Command& cmd )
         return Player::specialAttrs[cmd.actionId];
 }
 
-void CalcMagicEffect( const Command& cmd )
+void CalcMagicEffect( const Command& cmd, ActionResult* actionResults, int& resultCount )
 {
     Player::MagicAttr& magicAttr = GetMagicAttr( cmd );
     CalcMagicFunc calcFunc = nullptr;
@@ -555,7 +557,7 @@ void CalcMagicEffect( const Command& cmd )
             if ( enemies[i].Type != InvalidEnemyType 
                 && enemies[i].Hp > 0 )
             {
-                ApplyMagicToEnemy( magicAttr, calcFunc, i );
+                ApplyMagicToEnemy( magicAttr, calcFunc, i, actionResults, resultCount );
             }
         }
         break;
@@ -563,7 +565,7 @@ void CalcMagicEffect( const Command& cmd )
     case Target_AllPlayers:
         for ( int i = 0; i < Player::PartySize; i++ )
         {
-            ApplyMagicToPlayer( magicAttr, calcFunc, i );
+            ApplyMagicToPlayer( magicAttr, calcFunc, i, actionResults, resultCount );
         }
         break;
 
@@ -574,21 +576,21 @@ void CalcMagicEffect( const Command& cmd )
             if ( enemies[targetIndex].Type != InvalidEnemyType 
                 && enemies[targetIndex].Hp > 0 )
             {
-                ApplyMagicToEnemy( magicAttr, calcFunc, targetIndex );
+                ApplyMagicToEnemy( magicAttr, calcFunc, targetIndex, actionResults, resultCount );
                 break;
             }
         }
         break;
 
     case Target_OnePlayer:
-        ApplyMagicToPlayer( magicAttr, calcFunc, cmd.targetIndex );
+        ApplyMagicToPlayer( magicAttr, calcFunc, cmd.targetIndex, actionResults, resultCount );
         break;
 
     case Target_Self:
         if ( cmd.actorParty == Party_Enemies )
-            ApplyMagicToEnemy( magicAttr, calcFunc, cmd.actorIndex );
+            ApplyMagicToEnemy( magicAttr, calcFunc, cmd.actorIndex, actionResults, resultCount );
         else
-            ApplyMagicToPlayer( magicAttr, calcFunc, cmd.actorIndex );
+            ApplyMagicToPlayer( magicAttr, calcFunc, cmd.actorIndex, actionResults, resultCount );
         break;
     }
 }
@@ -598,7 +600,7 @@ void CalcMagicEffect( const Command& cmd )
 // Item
 //----------------------------------------------------------------------------
 
-void CalcItemEffect( const Command& curCmd )
+void CalcItemEffect( const Command& curCmd, ActionResult* actionResults, int& resultCount )
 {
     const Command& cmd = curCmd;
     Command magicCmd = cmd;
@@ -610,11 +612,11 @@ void CalcItemEffect( const Command& curCmd )
     {
         magicCmd.actionId = spellId - 1;
 
-        CalcMagicEffect( magicCmd );
+        CalcMagicEffect( magicCmd, actionResults, resultCount );
     }
 }
 
-void CalcEnemyAutoHP()
+void CalcEnemyAutoHP( ActionResult* actionResults, int& resultCount )
 {
     for ( int i = 0; i < MaxEnemies; i++ )
     {
@@ -648,7 +650,7 @@ void CalcEnemyAutoHP()
     }
 }
 
-void CalcPlayerAutoHP()
+void CalcPlayerAutoHP( ActionResult* actionResults, int& resultCount )
 {
     for ( int i = 0; i < Player::PartySize; i++ )
     {

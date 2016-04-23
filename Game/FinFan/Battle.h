@@ -241,7 +241,6 @@ namespace Battle
     const int MaxActors = MaxEnemies + Players;
 
     void UpdateAllIdleSprites();
-    void UpdateIdleSprites();
     void UpdateIdleSprite( int playerId );
     void LeaveBattle();
 
@@ -259,10 +258,6 @@ namespace Battle
     extern int         enemyCount;
     extern EncounterType gEncounter;
     extern int gFormationId;
-
-    extern ActionResult actionResults[9+Players];
-    extern int resultCount;
-    extern ActionResult& strikeResult;
 
     extern Menu*       activeMenu;
     extern char gMessage[256];

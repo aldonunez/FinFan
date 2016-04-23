@@ -12,4 +12,5 @@ namespace Battle
 {
     void GotoFirstState();
     void UpdateState();
+    int GetResultCount();
 }
