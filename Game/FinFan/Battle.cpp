@@ -95,7 +95,6 @@ ALLEGRO_BITMAP* playerImages;
 ALLEGRO_BITMAP* battleSprites;
 EnemyAttr       enemyAttrs[128];
 AttackList      attackLists[44];
-ColorInt24      nesColors[64];
 
 TypeCounter typeCounts[4];
 Enemy       enemies[9];
@@ -248,7 +247,7 @@ void Init( int formationId, int backdropId )
 
 
     char filename[256] = "";
-    int pattern = formations[gFormationId].Pattern;
+    int pattern = GetFormation().Pattern;
     sprintf_s( filename, "enemies%X.png", pattern );
 
     enemyImages = al_load_bitmap( filename );
@@ -270,14 +269,6 @@ void Init( int formationId, int backdropId )
         return;
 
     fread( attackLists, sizeof attackLists[0], _countof( attackLists ), file );
-    fclose( file );
-
-
-    err = fopen_s( &file, "nesColors.dat", "rb" );
-    if ( err != 0 )
-        return;
-
-    fread( nesColors, sizeof nesColors[0], _countof( nesColors ), file );
     fclose( file );
 
 
@@ -599,7 +590,7 @@ void MakeCenteredEnemy();
 
 void MakeEnemies()
 {
-    Formation* formation = &formations[gFormationId];
+    const Formation& formation = GetFormation();
     int bigEnemyCount = 0;
 
     for ( int i = 0; i < _countof( typeCounts ); i++ )
@@ -617,7 +608,7 @@ void MakeEnemies()
     enemiesHead.Prev = &enemiesHead;
     enemyCount = 0;
 
-    switch ( formation->Type )
+    switch ( formation.Type )
     {
     case FormType_Big:
         MakeOneSizeEnemies( sBigEnemyPos, _countof( sBigEnemyPos ), BigEnemyWidth );
@@ -700,8 +691,8 @@ void MakeOneEnemy( const ::Point& place, int type )
 
 void MakeCenteredEnemy()
 {
-    Formation* formation = &formations[gFormationId];
-    int type = formation->Ids[0];
+    const Formation& formation = GetFormation();
+    int type = formation.Ids[0];
     Point place;
 
     place.X = EnemyLeft + (EnemyZoneWidth - enemySourcePos[type].Width) / 2;
@@ -712,19 +703,19 @@ void MakeCenteredEnemy()
 
 void MakeOneSizeEnemies( const ::Point* places, int maxPlaces, int placeWidth )
 {
-    Formation* formation = &formations[gFormationId];
-    uint8_t* set = nullptr;
+    const Formation& formation = GetFormation();
+    const uint8_t* set = nullptr;
     int setSize = 0;
     int count = 0;
 
     if ( gSetId == 0 )
     {
-        set = &formation->MinMax[0];
+        set = &formation.MinMax[0];
         setSize = 4;
     }
     else
     {
-        set = &formation->MinMax[4];
+        set = &formation.MinMax[4];
         setSize = 2;
     }
 
@@ -732,7 +723,7 @@ void MakeOneSizeEnemies( const ::Point* places, int maxPlaces, int placeWidth )
     {
         if ( set[i] == 0 )
             continue;
-        if ( enemySourcePos[formation->Ids[i]].Width != placeWidth )
+        if ( enemySourcePos[formation.Ids[i]].Width != placeWidth )
             continue;
 
         int max = set[i] & 0xf;
@@ -745,7 +736,7 @@ void MakeOneSizeEnemies( const ::Point* places, int maxPlaces, int placeWidth )
             if ( count == maxPlaces || enemyCount == _countof( enemies ) )
                 goto NoMoreEnemies;
 
-            MakeOneEnemy( places[count], formation->Ids[i] );
+            MakeOneEnemy( places[count], formation.Ids[i] );
         }
     }
 
@@ -789,6 +780,21 @@ EnemyMap bossEnemyMap =
     }
 };
 
+EncounterType GetEncounterType()
+{
+    return gEncounter;
+}
+
+void SetEncounterType( EncounterType value )
+{
+    gEncounter = value;
+}
+
+const Formation& GetFormation()
+{
+    return formations[gFormationId];
+}
+
 Enemy* GetEnemies()
 {
     return enemies;
@@ -796,9 +802,9 @@ Enemy* GetEnemies()
 
 const EnemyMap* GetEnemyMap()
 {
-    Formation* formation = &formations[gFormationId];
+    const Formation& formation = GetFormation();
 
-    switch ( formation->Type )
+    switch ( formation.Type )
     {
     case FormType_Big:      return &bigEnemyMap;
     case FormType_Small:    return &smallEnemyMap;

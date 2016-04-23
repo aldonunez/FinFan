@@ -74,9 +74,17 @@ bool LoadResource( const char* filename, ResourceLoader* loader )
     return true;
 }
 
+struct ColorInt24
+{
+    uint8_t Blue;
+    uint8_t Green;
+    uint8_t Red;
+};
+
 uint8_t Global::domains[Domains][DomainFormations];
 uint8_t Global::formationWeights[FormationWeights];
 uint16_t Global::prices[Prices];
+static ColorInt24   nesColors[64];
 
 
 bool Global::Init()
@@ -90,7 +98,16 @@ bool Global::Init()
     if ( !LoadList( "prices.dat", prices, Prices ) )
         return false;
 
+    if ( !LoadList( "nesColors.dat", nesColors, _countof( nesColors ) ) )
+        return false;
+
     return true;
+}
+
+ALLEGRO_COLOR Global::GetSystemColor( int colorIndex )
+{
+    ColorInt24& color = nesColors[colorIndex];
+    return al_map_rgb( color.Red, color.Green, color.Blue );
 }
 
 int Global::GetBattleFormation( int domain )

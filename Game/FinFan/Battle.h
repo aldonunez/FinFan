@@ -180,6 +180,13 @@ namespace Battle
         int8_t Indexes[EnemyMapRows][EnemyMapCols];
     };
 
+    enum EncounterType
+    {
+        Encounter_Normal,
+        Encounter_PlayerFirst,
+        Encounter_EnemyFirst,
+    };
+
 
     const int BackdropSegWidth = 112;
     const int BackdropSegHeight = 32;
@@ -199,8 +206,11 @@ namespace Battle
     const int NoneIndex = -1;
 
 
+    const Formation& GetFormation();
     Enemy* GetEnemies();
     const EnemyMap* GetEnemyMap();
+    EncounterType GetEncounterType();
+    void SetEncounterType( EncounterType value );
 
     Command& GetCommandBuilder();
     void AddCommand( const Command& cmd );
@@ -217,20 +227,6 @@ namespace Battle
     Sprite* playerSprites[];
 
 
-    enum EncounterType
-    {
-        Encounter_Normal,
-        Encounter_PlayerFirst,
-        Encounter_EnemyFirst,
-    };
-
-    struct ColorInt24
-    {
-        uint8_t Blue;
-        uint8_t Green;
-        uint8_t Red;
-    };
-
     class Effect
     {
     public:
@@ -244,10 +240,8 @@ namespace Battle
     void UpdateIdleSprite( int playerId );
     void LeaveBattle();
 
-    extern Formation       formations[128];
     extern EnemyAttr       enemyAttrs[128];
     extern AttackList      attackLists[44];
-    extern ColorInt24      nesColors[64];
     extern ALLEGRO_BITMAP* battleSprites;
 
     extern Bounds16 weaponFrames[2];
@@ -256,8 +250,6 @@ namespace Battle
 
     extern Enemy       enemies[9];
     extern int         enemyCount;
-    extern EncounterType gEncounter;
-    extern int gFormationId;
 
     extern Menu*       activeMenu;
     extern char gMessage[256];

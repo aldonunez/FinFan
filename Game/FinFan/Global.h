@@ -339,4 +339,6 @@ public:
     static uint32_t GetTime();
     static void SetTime( uint32_t timeMillis );
     static void GetHoursMinutes( uint32_t millis, uint32_t& hours, uint32_t& minutes );
+
+    static ALLEGRO_COLOR GetSystemColor( int colorIndex );
 };

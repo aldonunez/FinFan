@@ -91,7 +91,7 @@ void UpdateState()
 
 void GotoFirstState()
 {
-    if ( gEncounter == Encounter_Normal )
+    if ( GetEncounterType() == Encounter_Normal )
         GotoFirstMenu();
     else
         GotoOpeningMessage();
@@ -103,7 +103,7 @@ void UpdateOpeningMessage()
     {
         gMessage[0] = '\0';
 
-        if ( gEncounter == Encounter_EnemyFirst )
+        if ( GetEncounterType() == Encounter_EnemyFirst )
             GotoFirstCommand();
         else
             GotoFirstMenu();
@@ -116,9 +116,9 @@ void UpdateOpeningMessage()
 
 void GotoOpeningMessage()
 {
-    if ( gEncounter == Encounter_PlayerFirst )
+    if ( GetEncounterType() == Encounter_PlayerFirst )
         strcpy_s( gMessage, "Chance to strike first" );
-    else if ( gEncounter == Encounter_EnemyFirst )
+    else if ( GetEncounterType() == Encounter_EnemyFirst )
         strcpy_s( gMessage, "Monsters strike first" );
     else
         gMessage[0] = '\0';
@@ -438,7 +438,7 @@ void GotoNextCommand()
     if ( AreCommandsFinished() )
     {
         // no matter what kind of encounter was started, after the first round, it's normal
-        gEncounter = Encounter_Normal;
+        SetEncounterType( Encounter_Normal );
 
         GotoAutoHP();
     }
@@ -714,7 +714,7 @@ void GotoRunCommand()
 
         curCmd = commands[playerId];
 
-        if ( gEncounter == Encounter_EnemyFirst )
+        if ( GetEncounterType() == Encounter_EnemyFirst )
             GotoNextCommand();
         else if ( !Player::IsPlayerAlive( curCmd.actorIndex ) )
             GotoNextCommand();
@@ -741,7 +741,7 @@ void GotoRunCommand()
         int enemyId = actorId;
         Enemy& enemy = enemies[enemyId];
 
-        if ( gEncounter == Encounter_PlayerFirst )
+        if ( GetEncounterType() == Encounter_PlayerFirst )
             GotoNextCommand();
         else if ( enemy.Type == InvalidEnemyType || enemy.Hp == 0 )
             GotoNextCommand();
@@ -1233,8 +1233,7 @@ void UpdatePlayerCastMagic()
         if ( (gTimer / 5) % 2 == 1 )
         {
             gShowBackgroundColor = true;
-            ColorInt24& color = nesColors[Player::magicAttrs[spellIndex].NesColor];
-            gFullScreenColor = al_map_rgb( color.Red, color.Green, color.Blue );
+            gFullScreenColor = Global::GetSystemColor( Player::magicAttrs[spellIndex].NesColor );
         }
         else
         {

@@ -57,7 +57,9 @@ int FindPrevActivePlayer( int nextPlayer )
 
 EncounterType GetNextEncounterType()
 {
-    if ( (formations[gFormationId].Flags & Formation_CantRun) != 0 )
+    const Formation& formation = GetFormation();
+
+    if ( (formation.Flags & Formation_CantRun) != 0 )
         return Encounter_Normal;
 
     int leaderId = FindLeader();
@@ -71,7 +73,7 @@ EncounterType GetNextEncounterType()
     int range = 100 - initiative + 1;
     int r = GetNextRandom( range );
 
-    int v = initiative + r - formations[gFormationId].SurpriseRate;
+    int v = initiative + r - formation.SurpriseRate;
 
     if ( v <= 10 )
         return Encounter_EnemyFirst;
@@ -680,11 +682,11 @@ void CalcPlayerAutoHP( ActionResult* actionResults, int& resultCount )
 bool CanRunAway( const Command& curCmd )
 {
     // formation doesn't allow running
-    if ( (formations[gFormationId].Flags & Formation_CantRun) != 0 )
+    if ( (GetFormation().Flags & Formation_CantRun) != 0 )
         return false;
 
     // can always leave if striking first
-    if ( gEncounter == Encounter_PlayerFirst )
+    if ( GetEncounterType() == Encounter_PlayerFirst )
         return true;
 
     const Command& cmd = curCmd;
