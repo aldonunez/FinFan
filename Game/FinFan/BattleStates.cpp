@@ -97,6 +97,11 @@ void GotoFirstState()
         GotoOpeningMessage();
 }
 
+void GotoEndOfTurn()
+{
+    GotoNextCommand();
+}
+
 void UpdateOpeningMessage()
 {
     if ( gTimer == 0 )
@@ -546,7 +551,7 @@ void UpdateRunAwayFailed()
         {
             UpdateIdleSprite( playerId );
 
-            GotoNextCommand();
+            GotoEndOfTurn();
         }
     }
 }
@@ -599,7 +604,7 @@ void UpdateEnemyFlee()
 
         enemies[cmd.actorIndex].Type = InvalidEnemyType;
 
-        GotoNextCommand();
+        GotoEndOfTurn();
     }
     else
     {
@@ -635,7 +640,7 @@ void UpdateEnemyEngage()
         else if ( curCmd.action == Action_Run )
             GotoEnemyFlee();
         else
-            GotoNextCommand();
+            GotoEndOfTurn();
     }
     else
     {
@@ -700,7 +705,7 @@ void GotoTryRecoverDisabling()
         }
     }
 
-    GotoNextCommand();
+    GotoEndOfTurn();
 }
 
 void GotoRunCommand()
@@ -715,9 +720,9 @@ void GotoRunCommand()
         curCmd = commands[playerId];
 
         if ( GetEncounterType() == Encounter_EnemyFirst )
-            GotoNextCommand();
+            GotoEndOfTurn();
         else if ( !Player::IsPlayerAlive( curCmd.actorIndex ) )
-            GotoNextCommand();
+            GotoEndOfTurn();
         else if ( (player.status & (Status_Paralysis | Status_Sleep)) != 0 )
             GotoTryRecoverDisabling();
         else if ( curCmd.action == Action_Fight )
@@ -734,7 +739,7 @@ void GotoRunCommand()
                 GotoRunAwayFailed();
         }
         else
-            GotoNextCommand();
+            GotoEndOfTurn();
     }
     else
     {
@@ -742,15 +747,15 @@ void GotoRunCommand()
         Enemy& enemy = enemies[enemyId];
 
         if ( GetEncounterType() == Encounter_PlayerFirst )
-            GotoNextCommand();
+            GotoEndOfTurn();
         else if ( enemy.Type == InvalidEnemyType || enemy.Hp == 0 )
-            GotoNextCommand();
+            GotoEndOfTurn();
         else if ( (enemy.Status & (Status_Paralysis | Status_Sleep)) != 0 )
             GotoTryRecoverDisabling();
         else if ( (enemy.Status & Status_Confusion) != 0 )
         {
             if ( TryRecoverConfuse( shuffledActors[curActorIndex] ) )
-                GotoNextCommand();
+                GotoEndOfTurn();
             else
             {
                 MakeConfuseAction( shuffledActors[curActorIndex], curCmd );
@@ -779,7 +784,7 @@ void UpdateDisengage()
     else
     {
         UpdateIdleSprite( playerId );
-        GotoNextCommand();
+        GotoEndOfTurn();
     }
 }
 
@@ -821,7 +826,7 @@ void UpdateEnemyDie()
         else if ( cmd.actorParty == Party_Players )
             GotoDisengage();
         else
-            GotoNextCommand();
+            GotoEndOfTurn();
     }
     else
     {
@@ -876,7 +881,7 @@ void UpdateNumbers()
         else if ( cmd.actorParty == Party_Players )
             GotoDisengage();
         else
-            GotoNextCommand();
+            GotoEndOfTurn();
     }
     else
     {
@@ -1086,7 +1091,7 @@ void UpdateEnemyFight()
             GotoNumbers();
         }
         else
-            GotoNextCommand();
+            GotoEndOfTurn();
     }
     else
     {
