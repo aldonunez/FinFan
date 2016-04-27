@@ -234,6 +234,25 @@ namespace Battle
         virtual void Draw() = 0;
     };
 
+    enum QueueId
+    {
+        Queue_Wait,
+        Queue_ReadyInput,
+        Queue_Run,
+        Queue_Active,
+        Queue_Max
+    };
+
+    struct AtbActor
+    {
+        int         Id;
+        int         Time;
+        int         StatusTime;
+        int         ParalysisTimer;
+        int         SleepTimer;
+        QueueId     Queue;
+    };
+
     const int MaxActors = MaxEnemies + Players;
 
     void UpdateAllIdleSprites();

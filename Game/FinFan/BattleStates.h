@@ -10,7 +10,15 @@
 
 namespace Battle
 {
+    enum
+    {
+        ReadyTime       = 0xFFFF,
+    };
+
+    struct AtbActor;
+
     void GotoFirstState();
     void UpdateState();
     int GetResultCount();
+    AtbActor* GetAtbPlayer( int index );
 }

@@ -15,6 +15,7 @@
 #include "Sprite.h"
 #include "SceneStack.h"
 #include "Sound.h"
+#include <allegro5\allegro_primitives.h>
 
 
 namespace Battle
@@ -472,6 +473,19 @@ void DrawPartyInfo()
 
         sprintf_s( str, "%3d/%3d", Player::Party[i].hp, Player::Party[i].maxHp );
         Text::DrawString( str, PartyHPLeft, y );
+
+#if defined( ATB )
+        AtbActor* atbPlayer = GetAtbPlayer( i );
+        int time = min( atbPlayer->Time, ReadyTime );
+        float timeRatio = time / (float) ReadyTime;
+        int readyBarWidth = (7 * 8) * timeRatio;
+        ALLEGRO_COLOR color = (time == ReadyTime) ? al_map_rgb( 255, 191, 0 ) : Color::White();
+        int barY = y + 12;
+
+        al_draw_line( PartyHPLeft, barY, PartyHPLeft + readyBarWidth, barY, color, 1 );
+
+        // TODO: Make the active player stand out.
+#endif
     }
 }
 

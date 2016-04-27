@@ -71,6 +71,11 @@ enum Status
 
     Status_AllLiving    = 0xfe,
     Status_All          = 0xff,
+
+    Status_NoInput      = Status_Death | Status_Stone | Status_Paralysis | 
+                          Status_Sleep | Status_Confusion,
+    Status_AllStopped   = Status_Death | Status_Stone | Status_Paralysis | 
+                          Status_Sleep,
 };
 
 
@@ -185,6 +190,7 @@ struct ActionResult
     bool    CritHit;
     bool    DealtDamage;
     int     Damage;
+    int     OrigStatus;
 };
 
 

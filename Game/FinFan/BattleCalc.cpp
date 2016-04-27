@@ -476,6 +476,7 @@ void CalcPlayerPhysDamage( const Command& curCmd, ActionResult& strikeResult, in
     }
 
     enemy = &enemies[enemyId];
+    strikeResult.OrigStatus = enemy->Status;
 
     CalcPhysDamage( &actor, enemy, strikeResult );
 
@@ -496,6 +497,7 @@ void CalcEnemyPhysDamage( const Command& curCmd, ActionResult& strikeResult, int
     strikeResult.TargetParty = Party_Players;
 
     player = &Player::Party[playerId];
+    strikeResult.OrigStatus = player->status;
 
     CalcPhysDamage( &actor, player, strikeResult );
 
@@ -513,6 +515,8 @@ void CalcEnemyPhysDamage( const Command& curCmd, ActionResult& strikeResult, int
 void ApplyMagicToEnemy( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFunc, int index,
     ActionResult* actionResults, int& resultCount )
 {
+    actionResults[resultCount].OrigStatus = enemies[index].Status;
+
     calcFunc( magicAttr, &enemies[index], actionResults[resultCount] );
 
     actionResults[resultCount].TargetParty = Party_Enemies;
@@ -526,6 +530,8 @@ void ApplyMagicToEnemy( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFu
 void ApplyMagicToPlayer( const Player::MagicAttr& magicAttr, CalcMagicFunc calcFunc, int index,
     ActionResult* actionResults, int& resultCount)
 {
+    actionResults[resultCount].OrigStatus = enemies[index].Status;
+
     calcFunc( magicAttr, &Player::Party[index], actionResults[resultCount] );
 
     actionResults[resultCount].TargetParty = Party_Players;
