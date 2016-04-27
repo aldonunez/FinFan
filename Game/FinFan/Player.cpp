@@ -284,7 +284,7 @@ namespace Player
 
     void LoadFile( FILE* file )
     {
-        const int CharDataSize = sizeof( Character ) - 4;
+        const int CharDataSize = sizeof( Character ) - sizeof( void* );
 
         for ( int i = 0; i < Players; i++ )
         {
@@ -312,7 +312,7 @@ namespace Player
 
     void SaveFile( FILE* file )
     {
-        const int CharDataSize = sizeof( Character ) - 4;
+        const int CharDataSize = sizeof( Character ) - sizeof( void* );
 
         for ( int i = 0; i < Players; i++ )
         {
