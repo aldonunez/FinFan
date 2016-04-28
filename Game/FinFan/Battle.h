@@ -238,6 +238,7 @@ namespace Battle
     {
         Queue_Wait,
         Queue_ReadyInput,
+        Queue_ActiveInput,
         Queue_Run,
         Queue_Active,
         Queue_Max
@@ -257,7 +258,7 @@ namespace Battle
 
     void UpdateAllIdleSprites();
     void UpdateIdleSprite( int playerId );
-    void LeaveBattle();
+    void DeleteMenus();
 
     extern EnemyAttr       enemyAttrs[128];
     extern AttackList      attackLists[44];

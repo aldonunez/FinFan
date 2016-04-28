@@ -36,6 +36,7 @@ const ALLEGRO_COLOR Green = { 0.5, 1, 0.5, 1 };
 typedef void (*UpdateFunc)();
 
 UpdateFunc  curUpdate;
+UpdateFunc  curInputUpdate;
 int         gTimer;
 
 Command     commands[Player::PartySize];
@@ -61,6 +62,7 @@ AtbActor    atbEnemies[MaxEnemies];
 AtbActor    atbPlayers[Players];
 Queue       waitQ;
 Queue       readyInputQ;
+Queue       activeInputQ;
 Queue       runQ;
 Queue       activeQ;
 int         battleTime;
@@ -69,6 +71,7 @@ Queue* queues[] =
 {
     &waitQ,
     &readyInputQ,
+    &activeInputQ,
     &runQ,
     &activeQ,
 };
@@ -92,6 +95,10 @@ void PrepActions();
 void ResetRunningCommands();
 bool AreCommandsFinished();
 void UpdateAffectedIdleSprites();
+void GotoNextInput();
+void GotoOpenMenuAtb();
+void GotoRunMenuAtb();
+void GotoCloseMenuAtb();
 
 
 int FindNextActivePlayer()
@@ -107,6 +114,7 @@ int FindPrevActivePlayer()
 void UpdateState()
 {
     curUpdate();
+    curInputUpdate();
 }
 
 void PushActor( QueueId queueId, AtbActor* atbActor )
@@ -174,9 +182,36 @@ void GotoFirstState()
     else
         GotoOpeningMessage();
 
-    // TODO: init input thread
-    //GotoNextInput();
+    GotoNextInput();
 #endif
+}
+
+void UpdateNone()
+{
+    // Do nothing.
+}
+
+void StopInput()
+{
+    readyInputQ.clear();
+    activeInputQ.clear();
+}
+
+void LeaveBattle()
+{
+    for ( int i = 0; i < Players; i++ )
+    {
+        Player::Party[i].status &= (Status_Death | Status_Stone | Status_Poison);
+        Player::Party[i].hitMultiplier = 1;
+
+        Player::CalcDerivedStats( i );
+    }
+
+    SceneStack::LeaveBattle();
+
+    // LeaveBattle will be called in the Action thread.
+    // But, the Input thread will still run after this, so don't let it do anything.
+    curInputUpdate = UpdateNone;
 }
 
 Actor* GetActor( int id )
@@ -238,6 +273,7 @@ void GotoEndOfTurn()
         PushActor( Queue_Wait, atbActor );
         atbActor->Time = 0;
     }
+
     SyncStatus();
 #endif
     GotoNextCommand();
@@ -293,6 +329,31 @@ void GotoOpeningMessage()
     gTimer = 90;
 
     curUpdate = UpdateOpeningMessage;
+}
+
+void UpdateInputIdle()
+{
+    // Check two queues:
+    //  1. ActiveInput - The player canceled the battle menu, so the character is still in this queue.
+    //  2. ReadyInput - A character can become the one that gets input.
+
+    if ( !activeInputQ.empty() )
+    {
+        GotoOpenMenuAtb();
+    }
+    else if ( !readyInputQ.empty() )
+    {
+        AtbActor* atbActor = readyInputQ.front();
+        PopActor( atbActor );
+        PushActor( Queue_ActiveInput, atbActor );
+
+        GotoOpenMenuAtb();
+    }
+}
+
+void GotoNextInput()
+{
+    curInputUpdate = UpdateInputIdle;
 }
 
 void UpdateOpenMenu()
@@ -432,6 +493,95 @@ void GotoCloseMenu( int nextPlayerId )
     curUpdate = UpdateCloseMenu;
 }
 
+void UpdateOpenMenuAtb()
+{
+    GotoRunMenuAtb();
+}
+
+void GotoOpenMenuAtb()
+{
+    if ( !activeInputQ.empty() )
+    {
+        int playerId = activeInputQ.front()->Id ^ PlayerFlag;
+        Command& cmd = commands[playerId];
+
+        // another feature: open and close the menus one by one and in parts
+        // TODO: play the active input sound
+
+        cmd.actorParty = Party_Players;
+        cmd.actorIndex = playerId;
+    }
+
+    curInputUpdate = UpdateOpenMenuAtb;
+}
+
+void UpdateRunMenuAtb()
+{
+    if ( activeInputQ.empty() )
+    {
+        GotoCloseMenuAtb();
+        return;
+    }
+
+    MenuAction menuAction = Menu_None;
+    Menu* nextMenu = nullptr;
+
+    menuAction = activeMenu->Update( nextMenu );
+
+    if ( menuAction == Menu_Push )
+    {
+        nextMenu->prevMenu = activeMenu;
+        activeMenu = nextMenu;
+    }
+    else if ( menuAction == Menu_Pop )
+    {
+        Menu* menu = activeMenu;
+        activeMenu = activeMenu->prevMenu;
+        delete menu;
+
+        if ( activeMenu == nullptr )
+        {
+            // Leave the actor in the ActiveInput queue.
+            GotoCloseMenuAtb();
+        }
+    }
+    else if ( menuAction == Menu_PopAll )
+    {
+        AtbActor* atbActor = activeInputQ.front();
+        PopActor( atbActor );
+        PushActor( Queue_Run, atbActor );
+
+        GotoCloseMenuAtb();
+    }
+    else if ( Input::IsKeyPressing( ALLEGRO_KEY_SPACE ) )
+    {
+        AtbActor* atbActor = activeInputQ.front();
+        PopActor( atbActor );
+        PushActor( Queue_ReadyInput, atbActor );
+
+        GotoCloseMenuAtb();
+    }
+}
+
+void GotoRunMenuAtb()
+{
+    activeMenu = new BattleMenu();
+    activeMenu->prevMenu = nullptr;
+
+    curInputUpdate = UpdateRunMenuAtb;
+}
+
+void UpdateCloseMenuAtb()
+{
+    DeleteMenus();
+    GotoNextInput();
+}
+
+void GotoCloseMenuAtb()
+{
+    curInputUpdate = UpdateCloseMenuAtb;
+}
+
 void GotoFirstCommand()
 {
     gAtEndOfRound = false;
@@ -529,6 +679,7 @@ void GotoWon()
 
     gTimer = 120;
 
+    StopInput();
     curUpdate = UpdateWon;
 }
 
@@ -544,6 +695,7 @@ void GotoLost()
 
     Sound::PlayTrack( Sound_Dead, 0, true );
 
+    StopInput();
     curUpdate = UpdateLost;
 }
 
@@ -905,6 +1057,7 @@ void GotoRunAway()
         }
     }
 
+    StopInput();
     curUpdate = UpdateRunAway;
 }
 
@@ -1758,7 +1911,12 @@ void ShuffleActors()
 
 Command& GetCommandBuilder()
 {
+#if !defined( ATB )
     return commands[curActorIndex];
+#else
+    int curActorInputIndex = activeInputQ.front()->Id ^ PlayerFlag;
+    return commands[curActorInputIndex];
+#endif
 }
 
 void AddCommand( const Command& cmd )
@@ -1794,6 +1952,14 @@ int GetResultCount()
 AtbActor* GetAtbPlayer( int index )
 {
     return &atbPlayers[index];
+}
+
+int GetInputPlayerIndex()
+{
+    if ( activeInputQ.empty() )
+        return -1;
+
+    return activeInputQ.front()->Id ^ PlayerFlag;
 }
 
 // TODO: add randomness to actor times?

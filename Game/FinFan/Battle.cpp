@@ -312,8 +312,7 @@ void Uninit()
     delete [] names;
     names = nullptr;
 
-    delete activeMenu;
-    activeMenu = nullptr;
+    DeleteMenus();
 
     for ( int i = 0; i < _countof( playerSprites ); i++ )
     {
@@ -334,17 +333,14 @@ void Uninit()
     }
 }
 
-void LeaveBattle()
+void DeleteMenus()
 {
-    for ( int i = 0; i < Players; i++ )
+    while ( activeMenu != nullptr )
     {
-        Player::Party[i].status &= (Status_Death | Status_Stone | Status_Poison);
-        Player::Party[i].hitMultiplier = 1;
-
-        Player::CalcDerivedStats( i );
+        Menu* menu = activeMenu;
+        activeMenu = activeMenu->prevMenu;
+        delete menu;
     }
-
-    SceneStack::LeaveBattle();
 }
 
 void UpdateIdleSprite( int index )
@@ -483,10 +479,16 @@ void DrawPartyInfo()
         int barY = y + 12;
 
         al_draw_line( PartyHPLeft, barY, PartyHPLeft + readyBarWidth, barY, color, 1 );
-
-        // TODO: Make the active player stand out.
 #endif
     }
+
+#if defined( ATB )
+    int index = GetInputPlayerIndex();
+    if ( index >= 0 )
+    {
+        Text::DrawChar( '!', 1, PartyX + PlayerSpriteWidth, PartyY + PlayerSpriteRowHeight * index );
+    }
+#endif
 }
 
 void DrawParty()

@@ -539,6 +539,14 @@ void ChooseOneEnemyTargetMenu::SelectLeft()
 
 MenuAction ChooseOneEnemyTargetMenu::Update( Menu*& nextMenu )
 {
+    int index = map->Indexes[cell.Y][cell.X];
+
+    // The enemy could have run away or died while the cursor was over it.
+    if ( GetEnemies()[index].Type == InvalidEnemyType || GetEnemies()[index].Hp == 0 )
+    {
+        return Menu_Pop;
+    }
+
     if ( Input::IsKeyPressing( ALLEGRO_KEY_DOWN ) )
     {
         SelectDown();
@@ -561,7 +569,6 @@ MenuAction ChooseOneEnemyTargetMenu::Update( Menu*& nextMenu )
     }
     else if ( Input::IsKeyPressing( ConfirmKey ) )
     {
-        int index = map->Indexes[cell.Y][cell.X];
         Command& builder = GetCommandBuilder();
         builder.target = Target_OneEnemy;
         builder.targetIndex = index;
