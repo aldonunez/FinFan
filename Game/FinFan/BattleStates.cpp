@@ -230,6 +230,7 @@ void SyncStatus()
 
 void GotoEndOfTurn()
 {
+#if defined( ATB )
     if ( !activeQ.empty() )
     {
         AtbActor* atbActor = activeQ.front();
@@ -237,8 +238,8 @@ void GotoEndOfTurn()
         PushActor( Queue_Wait, atbActor );
         atbActor->Time = 0;
     }
-
     SyncStatus();
+#endif
     GotoNextCommand();
 }
 
