@@ -66,6 +66,7 @@ Queue       activeInputQ;
 Queue       runQ;
 Queue       activeQ;
 int         battleTime;
+bool        atbWaitEnabled;
 
 Queue* queues[] = 
 {
@@ -944,6 +945,12 @@ void UpdateWaitForRunQ()
 
 void GotoNextCommandAtb()
 {
+    if ( atbWaitEnabled && activeMenu != nullptr && activeMenu->IsPopupStack() )
+    {
+        curUpdate = UpdateWaitForRunQ;
+        return;
+    }
+
     battleTime++;
 
     // Did a status change cause a state change?
@@ -1956,10 +1963,14 @@ AtbActor* GetAtbPlayer( int index )
 
 int GetInputPlayerIndex()
 {
+#if !defined( ATB )
+    return curActorIndex;
+#else
     if ( activeInputQ.empty() )
         return -1;
 
     return activeInputQ.front()->Id ^ PlayerFlag;
+#endif
 }
 
 // TODO: add randomness to actor times?

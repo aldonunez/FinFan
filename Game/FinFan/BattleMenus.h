@@ -12,6 +12,25 @@
 
 namespace Battle
 {
+    enum MenuAction
+    {
+        Menu_None,
+        Menu_Push,
+        Menu_Pop,
+        Menu_PopAll,
+    };
+
+    class Menu
+    {
+    public:
+        Menu* prevMenu;
+
+        virtual MenuAction Update( Menu*& nextMenu ) = 0;
+        virtual void Draw() = 0;
+        virtual void DrawCursor() = 0;
+        virtual bool IsPopupStack();
+    };
+
     class BattleMenu : public Menu
     {
         static const int BoxX = 64;
@@ -51,6 +70,7 @@ namespace Battle
         virtual MenuAction Update( Menu*& nextMenu );
         virtual void Draw();
         virtual void DrawCursor();
+        virtual bool IsPopupStack();
 
     private:
         MenuAction AcceptAction( Menu*& nextMenu );
@@ -78,6 +98,7 @@ namespace Battle
         virtual MenuAction Update( Menu*& nextMenu );
         virtual void Draw();
         virtual void DrawCursor();
+        virtual bool IsPopupStack();
 
     private:
         MenuAction AcceptAction( Menu*& nextMenu );

@@ -32,6 +32,18 @@ void PlayConfirm()
 
 
 //----------------------------------------------------------------------------
+//  Menu
+//----------------------------------------------------------------------------
+
+bool Menu::IsPopupStack()
+{
+    if ( prevMenu == nullptr )
+        return false;
+    return prevMenu->IsPopupStack();
+}
+
+
+//----------------------------------------------------------------------------
 //  BattleMenu
 //----------------------------------------------------------------------------
 
@@ -240,11 +252,14 @@ MenuAction MagicMenu::AcceptAction( Menu*& nextMenu )
 
 void MagicMenu::Draw()
 {
-    int playerId = GetCommandBuilder().actorIndex;
+    Text::DrawBox( BoxX, BoxY, 248, 88 );
+
+    int playerId = GetInputPlayerIndex();
+    if ( playerId < 0 )
+        return;
+
     Player::Character& player = Player::Party[playerId];
     char str[16] = "";
-
-    Text::DrawBox( BoxX, BoxY, 248, 88 );
 
     for ( int r = 0; r < 4; r++ )
     {
@@ -279,6 +294,11 @@ void MagicMenu::DrawCursor()
     int y = TextY + (selRow - topRow) * LineHeight;
 
     Text::DrawCursor( x, y );
+}
+
+bool MagicMenu::IsPopupStack()
+{
+    return true;
 }
 
 
@@ -425,6 +445,11 @@ void ItemMenu::DrawCursor()
     Text::DrawCursor( x, y );
 }
 
+bool ItemMenu::IsPopupStack()
+{
+    return true;
+}
+
 
 //----------------------------------------------------------------------------
 //  ChooseOneEnemyTargetMenu
@@ -541,7 +566,7 @@ MenuAction ChooseOneEnemyTargetMenu::Update( Menu*& nextMenu )
 {
     int index = map->Indexes[cell.Y][cell.X];
 
-    // The enemy could have run away or died while the cursor was over it.
+    // In ATB, the enemy could have run away or died while the cursor was over it.
     if ( GetEnemies()[index].Type == InvalidEnemyType || GetEnemies()[index].Hp == 0 )
     {
         return Menu_Pop;
@@ -766,7 +791,7 @@ void ChooseAllPlayersTargetMenu::Draw()
 
 void ChooseAllPlayersTargetMenu::DrawCursor()
 {
-    Command& cmd = GetCommandBuilder();
+    int inputPlayerIndex = GetInputPlayerIndex();
 
     if ( timer < 2 )
     {
@@ -774,7 +799,7 @@ void ChooseAllPlayersTargetMenu::DrawCursor()
         {
             int x = PartyX - 16;
 
-            if ( i == cmd.actorIndex )
+            if ( i == inputPlayerIndex )
                 x -= 16;
 
             Text::DrawCursor( x, PartyY + i * PlayerSpriteHeight );

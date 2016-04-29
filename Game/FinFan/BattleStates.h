@@ -21,5 +21,4 @@ namespace Battle
     void UpdateState();
     int GetResultCount();
     AtbActor* GetAtbPlayer( int index );
-    int GetInputPlayerIndex();
 }

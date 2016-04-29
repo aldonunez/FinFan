@@ -154,23 +154,7 @@ namespace Battle
         int     targetIndex;
     };
 
-    enum MenuAction
-    {
-        Menu_None,
-        Menu_Push,
-        Menu_Pop,
-        Menu_PopAll,
-    };
-
-    class Menu
-    {
-    public:
-        Menu* prevMenu;
-
-        virtual MenuAction Update( Menu*& nextMenu ) = 0;
-        virtual void Draw() = 0;
-        virtual void DrawCursor() = 0;
-    };
+    class Menu;
 
     const int EnemyMapCols = 3;
     const int EnemyMapRows = 3;
@@ -214,6 +198,7 @@ namespace Battle
 
     Command& GetCommandBuilder();
     void AddCommand( const Command& cmd );
+    int GetInputPlayerIndex();
 
 
     Bounds standFrames[];

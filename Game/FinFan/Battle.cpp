@@ -8,6 +8,7 @@
 #include "Common.h"
 #include "Battle.h"
 #include "BattleCalc.h"
+#include "BattleMenus.h"
 #include "BattleMod.h"
 #include "BattleStates.h"
 #include "Player.h"
