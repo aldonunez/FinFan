@@ -254,6 +254,16 @@ void MainMenu::DrawClass( int classId, int x, int y )
     al_draw_bitmap_region( instance->playerBmp, 0, sy, 16, 24, x, y, 0 );
 }
 
+void MainMenu::DrawPlayerEquipableAnim( int playerId, int x, int y )
+{
+    Player::Character& player = Player::Party[playerId];
+    int frame = (GetFrameCounter() >> 4) & 1;
+    int sy = player._class * 24;
+    int sx = frame * 48;
+
+    al_draw_bitmap_region( instance->playerBmp, sx, sy, 16, 24, x, y, 0 );
+}
+
 void MainMenu::DrawOrb( int index, bool lit, int x, int y )
 {
     int sx = 0;

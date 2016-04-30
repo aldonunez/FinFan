@@ -51,6 +51,10 @@ const int SpellListBoxY = 64;
 const int SpellListBoxWidth = 256;
 const int SpellListBoxHeight = 120;
 
+const int PartyX = 32;
+const int PartyY = 200;
+const int PlayerWidth = 48;
+
 
 void DrawCommonShop( int shopId, const char* message, bool tallMsg )
 {
@@ -67,6 +71,23 @@ void DrawCommonShop( int shopId, const char* message, bool tallMsg )
 
     Text::DrawBox( 176, 40, 80, 24 );
     Text::DrawString( str, 184, 40+8 );
+}
+
+Point GetPlayerEquipabilityPos( int playerId )
+{
+    Point point = { PartyX, PartyY };
+    point.X += playerId * PlayerWidth;
+    return point;
+}
+
+void DrawPlayerEquipability( int playerId, bool canEquip )
+{
+    Point point = GetPlayerEquipabilityPos( playerId );
+
+    if ( canEquip )
+        MainMenu::DrawPlayerEquipableAnim( playerId, point.X, point.Y );
+    else
+        MainMenu::DrawPlayer( playerId, point.X, point.Y );
 }
 
 
@@ -293,6 +314,22 @@ void BuyItemMenu::DrawEquipUI()
     sprintf_s( str, "%2d", equipped );
     Text::DrawString( "Equipped", 152 + 16, ItemBoxY + 32 );
     Text::DrawString( str, 152 + 80, ItemBoxY + 32 + 8 );
+
+    if (   shopType == ShopType_Weapon
+        || shopType == ShopType_Armor )
+    {
+        for ( int i = 0; i < Players; i++ )
+        {
+            bool canEquip = false;
+
+            if ( shopType == ShopType_Weapon )
+                canEquip = Player::CanEquipWeapon( selItemId, Player::Party[i]._class );
+            else if ( shopType == ShopType_Armor )
+                canEquip = Player::CanEquipArmor( selItemId, Player::Party[i]._class );
+
+            DrawPlayerEquipability( i, canEquip );
+        }
+    }
 }
 
 
@@ -695,6 +732,14 @@ void BuySpellMenu::Draw( MenuDrawState state )
 
         Text::DrawCursor( SpellListBoxX, y );
     }
+
+    int spellItemId = spells[selIndex];
+
+    for ( int i = 0; i < Players; i++ )
+    {
+        bool canLearn = Player::CanLearnSpell( spellItemId, Player::Party[i]._class );
+        DrawPlayerEquipability( i, canLearn );
+    }
 }
 
 
@@ -783,23 +828,13 @@ bool LearnerMenu::LearnSpell()
 
 void LearnerMenu::Draw( MenuDrawState state )
 {
-    const int PartyX = 32;
-    const int PartyY = 200;
-    const int PlayerWidth = 48;
-
     if ( prevMenu != nullptr )
         prevMenu->Draw( MenuDraw_Paused );
 
-    for ( int i = 0; i < Player::PartySize; i++ )
-    {
-        MainMenu::DrawPlayer( i, PartyX + PlayerWidth * i, PartyY );
-    }
-
     if ( state == MenuDraw_Active || (GetFrameCounter() % 4) < 2 )
     {
-        int x = PartyX + PlayerWidth * selIndex - 16;
-
-        Text::DrawCursor( x, PartyY );
+        Point point = GetPlayerEquipabilityPos( selIndex );
+        Text::DrawCursor( point.X - 16, point.Y );
     }
 }
 

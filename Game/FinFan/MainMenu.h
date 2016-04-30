@@ -89,6 +89,7 @@ public:
     static void DrawMainPlayerPic();
     static void DrawPlayer( int playerId, int x, int y );
     static void DrawClass( int classId, int x, int y );
+    static void DrawPlayerEquipableAnim( int playerId, int x, int y );
     static void DrawOrb( int index, bool lit, int x, int y );
 
     static bool ItemTargetsPlayer( int itemId );
