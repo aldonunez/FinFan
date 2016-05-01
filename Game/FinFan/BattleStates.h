@@ -10,6 +10,11 @@
 
 namespace Battle
 {
+    void GotoFirstState();
+    void UpdateState();
+    int GetResultCount();
+
+#if defined( ATB )
     enum
     {
         ReadyTime       = 0xFFFF,
@@ -17,8 +22,6 @@ namespace Battle
 
     struct AtbActor;
 
-    void GotoFirstState();
-    void UpdateState();
-    int GetResultCount();
     AtbActor* GetAtbPlayer( int index );
+#endif
 }

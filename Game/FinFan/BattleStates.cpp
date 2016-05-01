@@ -16,7 +16,9 @@
 #include "Sound.h"
 #include "Sprite.h"
 #include "Utility.h"
+#if defined( ATB )
 #include <list>
+#endif
 
 
 namespace Battle
@@ -36,7 +38,6 @@ const ALLEGRO_COLOR Green = { 0.5, 1, 0.5, 1 };
 typedef void (*UpdateFunc)();
 
 UpdateFunc  curUpdate;
-UpdateFunc  curInputUpdate;
 int         gTimer;
 
 Command     commands[Player::PartySize];
@@ -56,33 +57,12 @@ ActionResult& strikeResult = actionResults[0];
 int resultCount;
 
 
-typedef std::list<AtbActor*> Queue;
-
-AtbActor    atbEnemies[MaxEnemies];
-AtbActor    atbPlayers[Players];
-Queue       waitQ;
-Queue       readyInputQ;
-Queue       activeInputQ;
-Queue       runQ;
-Queue       activeQ;
-int         battleTime;
-bool        atbWaitEnabled;
-
-Queue* queues[] = 
-{
-    &waitQ,
-    &readyInputQ,
-    &activeInputQ,
-    &runQ,
-    &activeQ,
-};
-
-
 void GotoFirstMenu();
 void GotoFirstCommand();
 void GotoOpeningMessage();
 void GotoRunCommand();
 void GotoNextCommand();
+void GotoNextCommandPtb();
 void GotoNumbers();
 void GotoPlayerMagicEffect();
 void GotoEnemyFight();
@@ -96,10 +76,44 @@ void PrepActions();
 void ResetRunningCommands();
 bool AreCommandsFinished();
 void UpdateAffectedIdleSprites();
+
+#if defined( ATB )
+typedef std::list<AtbActor*> Queue;
+
+AtbActor    atbEnemies[MaxEnemies];
+AtbActor    atbPlayers[Players];
+Queue       waitQ;
+Queue       readyInputQ;
+Queue       activeInputQ;
+Queue       runQ;
+Queue       activeQ;
+int         battleTime;
+bool        atbWaitEnabled;
+UpdateFunc  curInputUpdate;
+
+Queue* queues[] = 
+{
+    &waitQ,
+    &readyInputQ,
+    &activeInputQ,
+    &runQ,
+    &activeQ,
+};
+
+void ResetActor( AtbActor* atbActor, int id );
+void PushActor( QueueId queueId, AtbActor* atbActor );
+void PopActor( AtbActor* atbActor );
+void RemoveActor( AtbActor* atbActor );
+void GotoFirstStateAtb();
+void GotoStateAfterOpeningMessageAtb();
+void GotoNextCommandAtb();
 void GotoNextInput();
 void GotoOpenMenuAtb();
 void GotoRunMenuAtb();
 void GotoCloseMenuAtb();
+void SyncStatus();
+void UpdateNone();
+#endif
 
 
 int FindNextActivePlayer()
@@ -115,37 +129,9 @@ int FindPrevActivePlayer()
 void UpdateState()
 {
     curUpdate();
+#if defined( ATB )
     curInputUpdate();
-}
-
-void PushActor( QueueId queueId, AtbActor* atbActor )
-{
-    queues[queueId]->push_back( atbActor );
-    atbActor->Queue = queueId;
-}
-
-void PopActor( AtbActor* atbActor )
-{
-    if ( !queues[atbActor->Queue]->empty() )
-        queues[atbActor->Queue]->pop_front();
-    atbActor->Queue = Queue_Max;
-}
-
-void RemoveActor( AtbActor* atbActor )
-{
-    Queue* queue = queues[atbActor->Queue];
-    queue->remove( atbActor );
-    atbActor->Queue = Queue_Max;
-}
-
-void ResetActor( AtbActor* atbActor, int id )
-{
-    atbActor->Id = id;
-    atbActor->Time = 0;
-    atbActor->StatusTime = 0;
-    atbActor->ParalysisTimer = 0;
-    atbActor->SleepTimer = 0;
-    atbActor->Queue = Queue_Max;
+#endif
 }
 
 void GotoFirstState()
@@ -156,46 +142,16 @@ void GotoFirstState()
     else
         GotoOpeningMessage();
 #else
-    for ( int i = 0; i < Queue_Max; i++ )
-    {
-        queues[i]->clear();
-    }
-
-    battleTime = 0;
-
-    for ( int i = 0; i < MaxEnemies; i++ )
-    {
-        if ( enemies[i].Type != InvalidEnemyType && enemies[i].Hp > 0 )
-        {
-            ResetActor( &atbEnemies[i], i );
-            PushActor( Queue_Wait, &atbEnemies[i] );
-        }
-    }
-
-    for ( int i = 0; i < Players; i++ )
-    {
-        ResetActor( &atbPlayers[i], i | PlayerFlag );
-        PushActor( Queue_Wait, &atbPlayers[i] );
-    }
-
-    if ( GetEncounterType() == Encounter_Normal )
-        GotoNextCommand();
-    else
-        GotoOpeningMessage();
-
-    GotoNextInput();
+    GotoFirstStateAtb();
 #endif
-}
-
-void UpdateNone()
-{
-    // Do nothing.
 }
 
 void StopInput()
 {
+#if defined( ATB )
     readyInputQ.clear();
     activeInputQ.clear();
+#endif
 }
 
 void LeaveBattle()
@@ -210,58 +166,11 @@ void LeaveBattle()
 
     SceneStack::LeaveBattle();
 
+#if defined( ATB )
     // LeaveBattle will be called in the Action thread.
     // But, the Input thread will still run after this, so don't let it do anything.
     curInputUpdate = UpdateNone;
-}
-
-Actor* GetActor( int id )
-{
-    if ( (id & PlayerFlag) == 0 )
-        return &enemies[id];
-    
-    return &Player::Party[id ^ PlayerFlag];
-}
-
-AtbActor* GetAtbActor( int id )
-{
-    if ( (id & PlayerFlag) == 0 )
-        return &atbEnemies[id];
-    
-    return &atbPlayers[id ^ PlayerFlag];
-}
-
-bool GotStatus( const ActionResult& r, Actor* actor, int status )
-{
-    return (r.OrigStatus & status) == 0
-        && (actor->GetStatus() & status) != 0;
-}
-
-void SyncStatus()
-{
-    for ( int i = 0; i < resultCount; i++ )
-    {
-        ActionResult& r = actionResults[i];
-        int id = (r.TargetParty == Party_Players) ? (r.TargetIndex | PlayerFlag) : r.TargetIndex;
-        Actor* actor = GetActor( id );
-        AtbActor* atbActor = GetAtbActor( id );
-
-        if ( GotStatus( r, actor, Status_Paralysis ) )
-            atbActor->ParalysisTimer = 34;
-
-        if ( GotStatus( r, actor, Status_Sleep ) )
-            atbActor->SleepTimer = 18;
-
-        if ( GotStatus( r, actor, Status_NoInput ) )
-        {
-            if ( atbActor->Queue < Queue_Max )
-            {
-                RemoveActor( atbActor );
-                PushActor( Queue_Wait, atbActor );
-                atbActor->Time = 0;
-            }
-        }
-    }
+#endif
 }
 
 void GotoEndOfTurn()
@@ -287,29 +196,12 @@ void UpdateOpeningMessage()
         gMessage[0] = '\0';
 
 #if !defined( ATB )
-        if ( GetEncounterType() == Encounter_EnemyFirst )
-            GotoFirstCommand();
-        else
-            GotoFirstMenu();
+    if ( GetEncounterType() == Encounter_EnemyFirst )
+        GotoFirstCommand();
+    else
+        GotoFirstMenu();
 #else
-        if ( GetEncounterType() == Encounter_EnemyFirst )
-        {
-            for ( int i = 0; i < _countof( enemies ); i++ )
-            {
-                if ( enemies[i].Type != InvalidEnemyType && enemies[i].Hp > 0 )
-                    atbEnemies[i].Time = ReadyTime;
-            }
-        }
-        else if ( GetEncounterType() == Encounter_PlayerFirst )
-        {
-            for ( int i = 0; i < Player::PartySize; i++ )
-            {
-                if ( (Player::Party[i].status & Status_AllStopped) == 0 )
-                    atbPlayers[i].Time = ReadyTime;
-            }
-        }
-
-        GotoNextCommand();
+        GotoStateAfterOpeningMessageAtb();
 #endif
     }
     else
@@ -330,31 +222,6 @@ void GotoOpeningMessage()
     gTimer = 90;
 
     curUpdate = UpdateOpeningMessage;
-}
-
-void UpdateInputIdle()
-{
-    // Check two queues:
-    //  1. ActiveInput - The player canceled the battle menu, so the character is still in this queue.
-    //  2. ReadyInput - A character can become the one that gets input.
-
-    if ( !activeInputQ.empty() )
-    {
-        GotoOpenMenuAtb();
-    }
-    else if ( !readyInputQ.empty() )
-    {
-        AtbActor* atbActor = readyInputQ.front();
-        PopActor( atbActor );
-        PushActor( Queue_ActiveInput, atbActor );
-
-        GotoOpenMenuAtb();
-    }
-}
-
-void GotoNextInput()
-{
-    curInputUpdate = UpdateInputIdle;
 }
 
 void UpdateOpenMenu()
@@ -492,95 +359,6 @@ void GotoCloseMenu( int nextPlayerId )
     gNextPlayerId = nextPlayerId;
 
     curUpdate = UpdateCloseMenu;
-}
-
-void UpdateOpenMenuAtb()
-{
-    GotoRunMenuAtb();
-}
-
-void GotoOpenMenuAtb()
-{
-    if ( !activeInputQ.empty() )
-    {
-        int playerId = activeInputQ.front()->Id ^ PlayerFlag;
-        Command& cmd = commands[playerId];
-
-        // another feature: open and close the menus one by one and in parts
-        // TODO: play the active input sound
-
-        cmd.actorParty = Party_Players;
-        cmd.actorIndex = playerId;
-    }
-
-    curInputUpdate = UpdateOpenMenuAtb;
-}
-
-void UpdateRunMenuAtb()
-{
-    if ( activeInputQ.empty() )
-    {
-        GotoCloseMenuAtb();
-        return;
-    }
-
-    MenuAction menuAction = Menu_None;
-    Menu* nextMenu = nullptr;
-
-    menuAction = activeMenu->Update( nextMenu );
-
-    if ( menuAction == Menu_Push )
-    {
-        nextMenu->prevMenu = activeMenu;
-        activeMenu = nextMenu;
-    }
-    else if ( menuAction == Menu_Pop )
-    {
-        Menu* menu = activeMenu;
-        activeMenu = activeMenu->prevMenu;
-        delete menu;
-
-        if ( activeMenu == nullptr )
-        {
-            // Leave the actor in the ActiveInput queue.
-            GotoCloseMenuAtb();
-        }
-    }
-    else if ( menuAction == Menu_PopAll )
-    {
-        AtbActor* atbActor = activeInputQ.front();
-        PopActor( atbActor );
-        PushActor( Queue_Run, atbActor );
-
-        GotoCloseMenuAtb();
-    }
-    else if ( Input::IsKeyPressing( ALLEGRO_KEY_SPACE ) )
-    {
-        AtbActor* atbActor = activeInputQ.front();
-        PopActor( atbActor );
-        PushActor( Queue_ReadyInput, atbActor );
-
-        GotoCloseMenuAtb();
-    }
-}
-
-void GotoRunMenuAtb()
-{
-    activeMenu = new BattleMenu();
-    activeMenu->prevMenu = nullptr;
-
-    curInputUpdate = UpdateRunMenuAtb;
-}
-
-void UpdateCloseMenuAtb()
-{
-    DeleteMenus();
-    GotoNextInput();
-}
-
-void GotoCloseMenuAtb()
-{
-    curInputUpdate = UpdateCloseMenuAtb;
 }
 
 void GotoFirstCommand()
@@ -738,9 +516,6 @@ void GotoAutoHP()
     }
 }
 
-void GotoNextCommandAtb();
-void GotoNextCommandPtb();
-
 void GotoNextCommand()
 {
     if ( HasLost() )
@@ -760,223 +535,6 @@ void GotoNextCommand()
 #else
     GotoNextCommandAtb();
 #endif
-}
-
-void AdvanceActorTimer( AtbActor* actor )
-{
-    // TODO: instead of 1, use speed stat (agility?)
-    int step = (96 * (1 + 20)) / 16;
-    // TODO *4 for testing
-    actor->Time += step * 4;
-}
-
-void TriggerStatusChange( AtbActor* atbActor, Party party, int index )
-{
-    Actor* actor = GetActor( atbActor->Id );
-    int stat = actor->GetStatus();
-    int hpBoost = 0;
-
-    if ( (stat & Status_Paralysis) != 0 )
-    {
-        atbActor->ParalysisTimer--;
-        if ( atbActor->ParalysisTimer <= 0 )
-            actor->RemoveStatus( Status_Paralysis );
-    }
-
-    if ( (stat & Status_Sleep) != 0 )
-    {
-        atbActor->SleepTimer--;
-        if ( atbActor->SleepTimer <= 0 )
-            actor->RemoveStatus( Status_Sleep );
-    }
-
-    if ( (stat & Status_Poison) != 0 )
-    {
-        int r = GetNextRandom( 8 );
-        if ( r < 1 )
-        {
-            int val = actor->GetMaxHp() / 20;
-            if ( val == 0 )
-                val = 1;
-            hpBoost -= val;
-        }
-    }
-
-    if ( (actor->GetEnemyClasses() & EnemyClass_Regen) != 0 )
-    {
-        int r = GetNextRandom( 8 );
-        if ( r < 2 )
-        {
-            int val = actor->GetMaxHp() / 20;
-            if ( val == 0 )
-                val = 1;
-            hpBoost += val;
-        }
-    }
-
-    if ( hpBoost != 0 )
-    {
-        actor->AddHp( hpBoost );
-
-        actionResults[resultCount].Missed = false;
-        actionResults[resultCount].DealtDamage = true;
-        actionResults[resultCount].Damage = -hpBoost;
-        actionResults[resultCount].Died = (actor->GetHp() == 0);
-        actionResults[resultCount].TargetParty = party;
-        actionResults[resultCount].TargetIndex = index;
-        actionResults[resultCount].OrigStatus = stat;
-        resultCount++;
-    }
-}
-
-bool AdvanceActorStatusTime( AtbActor* atbActor )
-{
-    int t = atbActor->StatusTime;
-    bool trigger = false;
-
-    // TODO: depends on slow/fast status
-    t += 64;
-
-    if ( t >= 256 )
-    {
-        t -= 256;
-        trigger = true;
-    }
-
-    atbActor->StatusTime = t;
-
-    return trigger;
-}
-
-void AdvanceStatusTime( AtbActor* atbActor, Party party, int index )
-{
-    if ( AdvanceActorStatusTime( atbActor ) )
-    {
-        TriggerStatusChange( atbActor, party, index );
-    }
-}
-
-bool CheckStatusTimers()
-{
-    if ( battleTime < 32 )
-        return false;
-
-    battleTime = 0;
-    resultCount = 0;
-
-    for ( int i = 0; i < MaxEnemies; i++ )
-    {
-        if ( enemies[i].Type != InvalidEnemyType && enemies[i].Hp > 0 )
-        {
-            AdvanceStatusTime( &atbEnemies[i], Party_Enemies, i );
-        }
-    }
-
-    // if all enemies die by poison, then the battle was won,
-    // even if players could have died by poison
-
-    if ( !HasWon() )
-    {
-        for ( int i = 0; i < Players; i++ )
-        {
-            if ( Player::Party[i].hp > 0 )
-            {
-                AdvanceStatusTime( &atbPlayers[i], Party_Players, i );
-            }
-        }
-    }
-
-    if ( resultCount > 0 )
-    {
-        GotoNumbers();
-        return true;
-    }
-
-    // Winning or losing means that some numbers were involved.
-    // So, the chain of states from Numbers will check won or lost.
-    // They'll update idle sprites there, too.
-
-    return false;
-}
-
-void CheckActorTimers()
-{
-    if ( (battleTime % 2) == 1 )
-        return;
-
-    for ( Queue::iterator it = waitQ.begin(); it != waitQ.end(); )
-    {
-        AtbActor* atbActor = *it;
-        Actor* actor = GetActor( atbActor->Id );
-
-        if ( (actor->GetStatus() & Status_AllStopped) == 0 )
-            AdvanceActorTimer( atbActor );
-
-        if ( atbActor->Time >= ReadyTime )
-        {
-            it = waitQ.erase( it );
-
-            bool isPlayer = (atbActor->Id & PlayerFlag) != 0;
-
-            // If we allowed confused players, then this is where we would decide which queue 
-            // to put them in. And, there's a question about how to handle their confused actions.
-            // Make an action now or later?
-
-            if ( isPlayer )
-            {
-                PushActor( Queue_ReadyInput, atbActor );
-            }
-            else
-            {
-                PushActor( Queue_Run, atbActor );
-            }
-        }
-        else
-        {
-            it++;
-        }
-    }
-}
-
-void UpdateWaitForRunQ()
-{
-    GotoNextCommand();
-}
-
-void GotoNextCommandAtb()
-{
-    if ( atbWaitEnabled && activeMenu != nullptr && activeMenu->IsPopupStack() )
-    {
-        curUpdate = UpdateWaitForRunQ;
-        return;
-    }
-
-    battleTime++;
-
-    // Did a status change cause a state change?
-    if ( CheckStatusTimers() )
-        return;
-
-    CheckActorTimers();
-
-    // Check the Run queue last, so that we always advance time.
-
-    if ( runQ.empty() )
-    {
-        curUpdate = UpdateWaitForRunQ;
-    }
-    else
-    {
-        AtbActor* atbActor = runQ.front();
-
-        curActorIndex = 0;
-        shuffledActors[0] = atbActor->Id;
-
-        PopActor( atbActor );
-        PushActor( Queue_Active, atbActor );
-
-        GotoRunCommand();
-    }
 }
 
 void GotoNextCommandPtb()
@@ -1378,7 +936,9 @@ void UpdateEnemyDie()
 
                 enemy->Counter->Count--;
 
+#if defined( ATB )
                 RemoveActor( &atbEnemies[index] );
+#endif
             }
         }
 
@@ -1956,11 +1516,6 @@ int GetResultCount()
     return resultCount;
 }
 
-AtbActor* GetAtbPlayer( int index )
-{
-    return &atbPlayers[index];
-}
-
 int GetInputPlayerIndex()
 {
 #if !defined( ATB )
@@ -1974,4 +1529,487 @@ int GetInputPlayerIndex()
 }
 
 // TODO: add randomness to actor times?
+
+
+//----------------------------------------------------------------------------
+//  Active Time Battle (ATB)
+//----------------------------------------------------------------------------
+
+#if defined( ATB )
+
+void PushActor( QueueId queueId, AtbActor* atbActor )
+{
+    queues[queueId]->push_back( atbActor );
+    atbActor->Queue = queueId;
+}
+
+void PopActor( AtbActor* atbActor )
+{
+    if ( !queues[atbActor->Queue]->empty() )
+        queues[atbActor->Queue]->pop_front();
+    atbActor->Queue = Queue_Max;
+}
+
+void RemoveActor( AtbActor* atbActor )
+{
+    Queue* queue = queues[atbActor->Queue];
+    queue->remove( atbActor );
+    atbActor->Queue = Queue_Max;
+}
+
+void ResetActor( AtbActor* atbActor, int id )
+{
+    atbActor->Id = id;
+    atbActor->Time = 0;
+    atbActor->StatusTime = 0;
+    atbActor->ParalysisTimer = 0;
+    atbActor->SleepTimer = 0;
+    atbActor->Queue = Queue_Max;
+}
+
+void GotoFirstStateAtb()
+{
+    for ( int i = 0; i < Queue_Max; i++ )
+    {
+        queues[i]->clear();
+    }
+
+    battleTime = 0;
+
+    for ( int i = 0; i < MaxEnemies; i++ )
+    {
+        if ( enemies[i].Type != InvalidEnemyType && enemies[i].Hp > 0 )
+        {
+            ResetActor( &atbEnemies[i], i );
+            PushActor( Queue_Wait, &atbEnemies[i] );
+        }
+    }
+
+    for ( int i = 0; i < Players; i++ )
+    {
+        ResetActor( &atbPlayers[i], i | PlayerFlag );
+        PushActor( Queue_Wait, &atbPlayers[i] );
+    }
+
+    if ( GetEncounterType() == Encounter_Normal )
+        GotoNextCommand();
+    else
+        GotoOpeningMessage();
+
+    GotoNextInput();
+}
+
+Actor* GetActor( int id )
+{
+    if ( (id & PlayerFlag) == 0 )
+        return &enemies[id];
+    
+    return &Player::Party[id ^ PlayerFlag];
+}
+
+AtbActor* GetAtbActor( int id )
+{
+    if ( (id & PlayerFlag) == 0 )
+        return &atbEnemies[id];
+    
+    return &atbPlayers[id ^ PlayerFlag];
+}
+
+bool GotStatus( const ActionResult& r, Actor* actor, int status )
+{
+    return (r.OrigStatus & status) == 0
+        && (actor->GetStatus() & status) != 0;
+}
+
+void SyncStatus()
+{
+    for ( int i = 0; i < resultCount; i++ )
+    {
+        ActionResult& r = actionResults[i];
+        int id = (r.TargetParty == Party_Players) ? (r.TargetIndex | PlayerFlag) : r.TargetIndex;
+        Actor* actor = GetActor( id );
+        AtbActor* atbActor = GetAtbActor( id );
+
+        if ( GotStatus( r, actor, Status_Paralysis ) )
+            atbActor->ParalysisTimer = 34;
+
+        if ( GotStatus( r, actor, Status_Sleep ) )
+            atbActor->SleepTimer = 18;
+
+        if ( GotStatus( r, actor, Status_NoInput ) )
+        {
+            if ( atbActor->Queue < Queue_Max )
+            {
+                RemoveActor( atbActor );
+                PushActor( Queue_Wait, atbActor );
+                atbActor->Time = 0;
+            }
+        }
+    }
+}
+
+void GotoStateAfterOpeningMessageAtb()
+{
+        if ( GetEncounterType() == Encounter_EnemyFirst )
+        {
+            for ( int i = 0; i < _countof( enemies ); i++ )
+            {
+                if ( enemies[i].Type != InvalidEnemyType && enemies[i].Hp > 0 )
+                    atbEnemies[i].Time = ReadyTime;
+            }
+        }
+        else if ( GetEncounterType() == Encounter_PlayerFirst )
+        {
+            for ( int i = 0; i < Player::PartySize; i++ )
+            {
+                if ( (Player::Party[i].status & Status_AllStopped) == 0 )
+                    atbPlayers[i].Time = ReadyTime;
+            }
+        }
+
+        GotoNextCommand();
+}
+
+void UpdateNone()
+{
+    // Do nothing.
+}
+
+void UpdateInputIdle()
+{
+    // Check two queues:
+    //  1. ActiveInput - The player canceled the battle menu, so the character is still in this queue.
+    //  2. ReadyInput - A character can become the one that gets input.
+
+    if ( !activeInputQ.empty() )
+    {
+        GotoOpenMenuAtb();
+    }
+    else if ( !readyInputQ.empty() )
+    {
+        AtbActor* atbActor = readyInputQ.front();
+        PopActor( atbActor );
+        PushActor( Queue_ActiveInput, atbActor );
+
+        GotoOpenMenuAtb();
+    }
+}
+
+void GotoNextInput()
+{
+    curInputUpdate = UpdateInputIdle;
+}
+
+void UpdateOpenMenuAtb()
+{
+    GotoRunMenuAtb();
+}
+
+void GotoOpenMenuAtb()
+{
+    if ( !activeInputQ.empty() )
+    {
+        int playerId = activeInputQ.front()->Id ^ PlayerFlag;
+        Command& cmd = commands[playerId];
+
+        // another feature: open and close the menus one by one and in parts
+        // TODO: play the active input sound
+
+        cmd.actorParty = Party_Players;
+        cmd.actorIndex = playerId;
+    }
+
+    curInputUpdate = UpdateOpenMenuAtb;
+}
+
+void UpdateRunMenuAtb()
+{
+    if ( activeInputQ.empty() )
+    {
+        GotoCloseMenuAtb();
+        return;
+    }
+
+    MenuAction menuAction = Menu_None;
+    Menu* nextMenu = nullptr;
+
+    menuAction = activeMenu->Update( nextMenu );
+
+    if ( menuAction == Menu_Push )
+    {
+        nextMenu->prevMenu = activeMenu;
+        activeMenu = nextMenu;
+    }
+    else if ( menuAction == Menu_Pop )
+    {
+        Menu* menu = activeMenu;
+        activeMenu = activeMenu->prevMenu;
+        delete menu;
+
+        if ( activeMenu == nullptr )
+        {
+            // Leave the actor in the ActiveInput queue.
+            GotoCloseMenuAtb();
+        }
+    }
+    else if ( menuAction == Menu_PopAll )
+    {
+        AtbActor* atbActor = activeInputQ.front();
+        PopActor( atbActor );
+        PushActor( Queue_Run, atbActor );
+
+        GotoCloseMenuAtb();
+    }
+    else if ( Input::IsKeyPressing( ALLEGRO_KEY_SPACE ) )
+    {
+        AtbActor* atbActor = activeInputQ.front();
+        PopActor( atbActor );
+        PushActor( Queue_ReadyInput, atbActor );
+
+        GotoCloseMenuAtb();
+    }
+}
+
+void GotoRunMenuAtb()
+{
+    activeMenu = new BattleMenu();
+    activeMenu->prevMenu = nullptr;
+
+    curInputUpdate = UpdateRunMenuAtb;
+}
+
+void UpdateCloseMenuAtb()
+{
+    DeleteMenus();
+    GotoNextInput();
+}
+
+void GotoCloseMenuAtb()
+{
+    curInputUpdate = UpdateCloseMenuAtb;
+}
+
+void AdvanceActorTimer( AtbActor* actor )
+{
+    // TODO: instead of 1, use speed stat (agility?)
+    int step = (96 * (1 + 20)) / 16;
+    // TODO *4 for testing
+    actor->Time += step * 4;
+}
+
+void TriggerStatusChange( AtbActor* atbActor, Party party, int index )
+{
+    Actor* actor = GetActor( atbActor->Id );
+    int stat = actor->GetStatus();
+    int hpBoost = 0;
+
+    if ( (stat & Status_Paralysis) != 0 )
+    {
+        atbActor->ParalysisTimer--;
+        if ( atbActor->ParalysisTimer <= 0 )
+            actor->RemoveStatus( Status_Paralysis );
+    }
+
+    if ( (stat & Status_Sleep) != 0 )
+    {
+        atbActor->SleepTimer--;
+        if ( atbActor->SleepTimer <= 0 )
+            actor->RemoveStatus( Status_Sleep );
+    }
+
+    if ( (stat & Status_Poison) != 0 )
+    {
+        int r = GetNextRandom( 8 );
+        if ( r < 1 )
+        {
+            int val = actor->GetMaxHp() / 20;
+            if ( val == 0 )
+                val = 1;
+            hpBoost -= val;
+        }
+    }
+
+    if ( (actor->GetEnemyClasses() & EnemyClass_Regen) != 0 )
+    {
+        int r = GetNextRandom( 8 );
+        if ( r < 2 )
+        {
+            int val = actor->GetMaxHp() / 20;
+            if ( val == 0 )
+                val = 1;
+            hpBoost += val;
+        }
+    }
+
+    if ( hpBoost != 0 )
+    {
+        actor->AddHp( hpBoost );
+
+        actionResults[resultCount].Missed = false;
+        actionResults[resultCount].DealtDamage = true;
+        actionResults[resultCount].Damage = -hpBoost;
+        actionResults[resultCount].Died = (actor->GetHp() == 0);
+        actionResults[resultCount].TargetParty = party;
+        actionResults[resultCount].TargetIndex = index;
+        actionResults[resultCount].OrigStatus = stat;
+        resultCount++;
+    }
+}
+
+bool AdvanceActorStatusTime( AtbActor* atbActor )
+{
+    int t = atbActor->StatusTime;
+    bool trigger = false;
+
+    // TODO: depends on slow/fast status
+    t += 64;
+
+    if ( t >= 256 )
+    {
+        t -= 256;
+        trigger = true;
+    }
+
+    atbActor->StatusTime = t;
+
+    return trigger;
+}
+
+void AdvanceStatusTime( AtbActor* atbActor, Party party, int index )
+{
+    if ( AdvanceActorStatusTime( atbActor ) )
+    {
+        TriggerStatusChange( atbActor, party, index );
+    }
+}
+
+bool CheckStatusTimers()
+{
+    if ( battleTime < 32 )
+        return false;
+
+    battleTime = 0;
+    resultCount = 0;
+
+    for ( int i = 0; i < MaxEnemies; i++ )
+    {
+        if ( enemies[i].Type != InvalidEnemyType && enemies[i].Hp > 0 )
+        {
+            AdvanceStatusTime( &atbEnemies[i], Party_Enemies, i );
+        }
+    }
+
+    // if all enemies die by poison, then the battle was won,
+    // even if players could have died by poison
+
+    if ( !HasWon() )
+    {
+        for ( int i = 0; i < Players; i++ )
+        {
+            if ( Player::Party[i].hp > 0 )
+            {
+                AdvanceStatusTime( &atbPlayers[i], Party_Players, i );
+            }
+        }
+    }
+
+    if ( resultCount > 0 )
+    {
+        GotoNumbers();
+        return true;
+    }
+
+    // Winning or losing means that some numbers were involved.
+    // So, the chain of states from Numbers will check won or lost.
+    // They'll update idle sprites there, too.
+
+    return false;
+}
+
+void CheckActorTimers()
+{
+    if ( (battleTime % 2) == 1 )
+        return;
+
+    for ( Queue::iterator it = waitQ.begin(); it != waitQ.end(); )
+    {
+        AtbActor* atbActor = *it;
+        Actor* actor = GetActor( atbActor->Id );
+
+        if ( (actor->GetStatus() & Status_AllStopped) == 0 )
+            AdvanceActorTimer( atbActor );
+
+        if ( atbActor->Time >= ReadyTime )
+        {
+            it = waitQ.erase( it );
+
+            bool isPlayer = (atbActor->Id & PlayerFlag) != 0;
+
+            // If we allowed confused players, then this is where we would decide which queue 
+            // to put them in. And, there's a question about how to handle their confused actions.
+            // Make an action now or later?
+
+            if ( isPlayer )
+            {
+                PushActor( Queue_ReadyInput, atbActor );
+            }
+            else
+            {
+                PushActor( Queue_Run, atbActor );
+            }
+        }
+        else
+        {
+            it++;
+        }
+    }
+}
+
+void UpdateWaitForRunQ()
+{
+    GotoNextCommand();
+}
+
+void GotoNextCommandAtb()
+{
+    if ( atbWaitEnabled && activeMenu != nullptr && activeMenu->IsPopupStack() )
+    {
+        curUpdate = UpdateWaitForRunQ;
+        return;
+    }
+
+    battleTime++;
+
+    // Did a status change cause a state change?
+    if ( CheckStatusTimers() )
+        return;
+
+    CheckActorTimers();
+
+    // Check the Run queue last, so that we always advance time.
+
+    if ( runQ.empty() )
+    {
+        curUpdate = UpdateWaitForRunQ;
+    }
+    else
+    {
+        AtbActor* atbActor = runQ.front();
+
+        curActorIndex = 0;
+        shuffledActors[0] = atbActor->Id;
+
+        PopActor( atbActor );
+        PushActor( Queue_Active, atbActor );
+
+        GotoRunCommand();
+    }
+}
+
+AtbActor* GetAtbPlayer( int index )
+{
+    return &atbPlayers[index];
+}
+
+#endif  // ATB
 }

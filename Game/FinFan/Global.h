@@ -190,6 +190,7 @@ struct ActionResult
     bool    CritHit;
     bool    DealtDamage;
     int     Damage;
+    // Used in ATB only
     int     OrigStatus;
 };
 

@@ -219,6 +219,7 @@ namespace Battle
         virtual void Draw() = 0;
     };
 
+#if defined( ATB )
     enum QueueId
     {
         Queue_Wait,
@@ -238,6 +239,7 @@ namespace Battle
         int         SleepTimer;
         QueueId     Queue;
     };
+#endif
 
     const int MaxActors = MaxEnemies + Players;
 
