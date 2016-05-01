@@ -44,7 +44,7 @@ Command     commands[Player::PartySize];
 int         shuffledActors[MaxActors];
 int         curActorIndex;
 Command     curCmd;
-int         gNextPlayerId;
+// Used for PTB. Leave it false for ATB.
 bool        gAtEndOfRound;
 
 int gXPWon;
@@ -72,6 +72,8 @@ void GotoPlayerFight();
 void GotoPlayerItem();
 void GotoPlayerCastMagic();
 void GotoDisengage();
+void GotoTryRecoverDisabling();
+void GotoCheckWonOrLost();
 void PrepActions();
 void ResetRunningCommands();
 bool AreCommandsFinished();
@@ -115,16 +117,6 @@ void SyncStatus();
 void UpdateNone();
 #endif
 
-
-int FindNextActivePlayer()
-{
-    return FindNextActivePlayer( curActorIndex );
-}
-
-int FindPrevActivePlayer()
-{
-    return FindPrevActivePlayer( curActorIndex );
-}
 
 void UpdateState()
 {
@@ -222,151 +214,6 @@ void GotoOpeningMessage()
     gTimer = 90;
 
     curUpdate = UpdateOpeningMessage;
-}
-
-void UpdateOpenMenu()
-{
-    int playerId = curActorIndex;
-    Sprite* sprite = playerSprites[playerId];
-
-    if ( sprite->GetX() > PartyX - 16 )
-    {
-        sprite->SetX( sprite->GetX() - 2 );
-    }
-    else
-    {
-        GotoRunMenu();
-    }
-}
-
-void GotoOpenMenu( int playerId )
-{
-    Command& cmd = commands[playerId];
-    int _class = Player::Party[playerId]._class;
-    playerSprites[playerId]->SetFrames( walkFrames, _class * PlayerSpriteRowHeight );
-
-    cmd.actorParty = Party_Players;
-    cmd.actorIndex = playerId;
-
-    curActorIndex = playerId;
-
-    curUpdate = UpdateOpenMenu;
-}
-
-void GotoFirstMenu()
-{
-    int firstPlayerId = FindNextActivePlayer( -1 );
-
-    if ( firstPlayerId != NoneIndex )
-        GotoOpenMenu( firstPlayerId );
-    else
-        GotoFirstCommand();
-}
-
-void UpdateRunMenu()
-{
-    MenuAction menuAction = Menu_None;
-    Menu* nextMenu = nullptr;
-
-    menuAction = activeMenu->Update( nextMenu );
-
-    if ( menuAction == Menu_Push )
-    {
-        nextMenu->prevMenu = activeMenu;
-        activeMenu = nextMenu;
-    }
-    else if ( menuAction == Menu_Pop )
-    {
-        Menu* menu = activeMenu;
-        activeMenu = activeMenu->prevMenu;
-        delete menu;
-
-        if ( activeMenu == nullptr )
-        {
-            int next = FindPrevActivePlayer();
-            if ( next == NoneIndex )
-                next = curActorIndex;
-
-            GotoCloseMenu( next );
-        }
-    }
-    else if ( menuAction == Menu_PopAll )
-    {
-        while ( activeMenu != nullptr )
-        {
-            Menu* menu = activeMenu;
-            activeMenu = activeMenu->prevMenu;
-            delete menu;
-        }
-
-        int next = FindNextActivePlayer();
-        GotoCloseMenu( next );
-    }
-}
-
-void GotoRunMenu()
-{
-    int playerId = curActorIndex;
-    int _class = Player::Party[playerId]._class;
-    playerSprites[playerId]->SetFrames( standFrames, _class * PlayerSpriteRowHeight );
-
-    activeMenu = new BattleMenu();
-    activeMenu->prevMenu = nullptr;
-
-    curUpdate = UpdateRunMenu;
-}
-
-void UpdateCloseMenu()
-{
-    int playerId = curActorIndex;
-    Sprite* sprite = playerSprites[playerId];
-
-    if ( sprite->GetX() < PartyX )
-    {
-        sprite->SetX( sprite->GetX() + 2 );
-    }
-    else
-    {
-        UpdateIdleSprite( playerId );
-
-        if ( gNextPlayerId == NoneIndex )
-        {
-            UndoAllCommands( commands );
-            GotoFirstCommand();
-        }
-        else
-        {
-            if ( gNextPlayerId > curActorIndex )
-            {
-                CommitCommand( commands[curActorIndex] );
-            }
-            else if ( gNextPlayerId < curActorIndex )
-            {
-                UndoCommand( commands[gNextPlayerId] );
-            }
-
-            GotoOpenMenu( gNextPlayerId );
-        }
-    }
-}
-
-void GotoCloseMenu( int nextPlayerId )
-{
-    int playerId = curActorIndex;
-    int _class = Player::Party[playerId]._class;
-    playerSprites[playerId]->SetFrames( walkFrames, _class * PlayerSpriteRowHeight );
-
-    gNextPlayerId = nextPlayerId;
-
-    curUpdate = UpdateCloseMenu;
-}
-
-void GotoFirstCommand()
-{
-    gAtEndOfRound = false;
-    PrepActions();
-    ResetRunningCommands();
-    GotoNextCommand();
 }
 
 void UpdateWon()
@@ -478,44 +325,6 @@ void GotoLost()
     curUpdate = UpdateLost;
 }
 
-void GotoCheckWonOrLost()
-{
-    UpdateAllIdleSprites();
-
-    if ( HasLost() )
-        GotoLost();
-    else if ( HasWon() )
-        GotoWon();
-    else
-        GotoFirstMenu();
-}
-
-void GotoAutoHP()
-{
-    resultCount = 0;
-
-    CalcEnemyAutoHP( actionResults, resultCount );
-
-    // if all enemies die by poison, then the battle was won,
-    // even if players could have died by poison
-
-    if ( !HasWon() )
-        CalcPlayerAutoHP( actionResults, resultCount );
-
-    if ( resultCount > 0 )
-    {
-        gAtEndOfRound = true;
-        curCmd.actorParty = Party_None;
-        curCmd.action = Action_None;
-
-        GotoNumbers();
-    }
-    else
-    {
-        GotoCheckWonOrLost();
-    }
-}
-
 void GotoNextCommand()
 {
     if ( HasLost() )
@@ -535,24 +344,6 @@ void GotoNextCommand()
 #else
     GotoNextCommandAtb();
 #endif
-}
-
-void GotoNextCommandPtb()
-{
-    if ( curActorIndex < MaxActors )
-        curActorIndex++;
-
-    if ( AreCommandsFinished() )
-    {
-        // no matter what kind of encounter was started, after the first round, it's normal
-        SetEncounterType( Encounter_Normal );
-
-        GotoAutoHP();
-    }
-    else
-    {
-        GotoRunCommand();
-    }
 }
 
 void UpdateEngage()
@@ -761,54 +552,6 @@ void GotoEnemyEngage()
     gTimer = 24;
 
     curUpdate = UpdateEnemyEngage;
-}
-
-void GotoTryRecoverDisabling()
-{
-    int actorId = shuffledActors[curActorIndex];
-
-    if ( (actorId & PlayerFlag) != 0 )
-    {
-        int playerId = actorId & ~PlayerFlag;
-        Player::Character& player = Player::Party[playerId];
-
-        if ( (player.status & Status_Paralysis) != 0 )
-        {
-            int r = GetNextRandom( 100 );
-            if ( r < 25 )
-                player.status &= ~Status_Paralysis;
-        }
-
-        if ( (player.status & Status_Sleep) != 0 )
-        {
-            int r = GetNextRandom( 81 );
-            if ( r < player.maxHp )
-                player.status &= ~Status_Sleep;
-        }
-
-        UpdateIdleSprite( playerId );
-    }
-    else
-    {
-        int enemyId = actorId;
-        Enemy& enemy = enemies[enemyId];
-
-        if ( (enemy.Status & Status_Paralysis) != 0 )
-        {
-            int r = GetNextRandom( 256 );
-            if ( r < 25 )
-                enemy.Status &= ~Status_Paralysis;
-        }
-
-        if ( (enemy.Status & Status_Sleep) != 0 )
-        {
-            int r = GetNextRandom( 81 );
-            if ( r < enemyAttrs[enemy.Type].Hp )
-                enemy.Status &= ~Status_Sleep;
-        }
-    }
-
-    GotoEndOfTurn();
 }
 
 void GotoRunCommand()
@@ -1453,29 +1196,6 @@ void GotoPlayerItem()
     curUpdate = UpdatePlayerItem;
 }
 
-void ResetRunningCommands()
-{
-    curActorIndex = -1;
-}
-
-bool AreCommandsFinished()
-{
-    return curActorIndex == MaxActors;
-}
-
-void ShuffleActors()
-{
-    for ( int i = 0; i < MaxActors; i++ )
-    {
-        if ( i < Player::PartySize )
-            shuffledActors[i] = i | PlayerFlag;
-        else
-            shuffledActors[i] = i - Player::PartySize;
-    }
-
-    ShuffleArray( shuffledActors, MaxActors );
-}
-
 Command& GetCommandBuilder()
 {
 #if !defined( ATB )
@@ -1488,12 +1208,6 @@ Command& GetCommandBuilder()
 
 void AddCommand( const Command& cmd )
 {
-}
-
-void PrepActions()
-{
-    MakeDisabledPlayerActions( commands );
-    ShuffleActors();
 }
 
 void UpdateAffectedIdleSprites()
@@ -1529,6 +1243,305 @@ int GetInputPlayerIndex()
 }
 
 // TODO: add randomness to actor times?
+
+
+//----------------------------------------------------------------------------
+//  Passive Time Battle (PTB)
+//----------------------------------------------------------------------------
+
+#if !defined( ATB )
+
+int         gNextPlayerId;
+
+int FindNextActivePlayer()
+{
+    return FindNextActivePlayer( curActorIndex );
+}
+
+int FindPrevActivePlayer()
+{
+    return FindPrevActivePlayer( curActorIndex );
+}
+
+void UpdateOpenMenu()
+{
+    int playerId = curActorIndex;
+    Sprite* sprite = playerSprites[playerId];
+
+    if ( sprite->GetX() > PartyX - 16 )
+    {
+        sprite->SetX( sprite->GetX() - 2 );
+    }
+    else
+    {
+        GotoRunMenu();
+    }
+}
+
+void GotoOpenMenu( int playerId )
+{
+    Command& cmd = commands[playerId];
+    int _class = Player::Party[playerId]._class;
+    playerSprites[playerId]->SetFrames( walkFrames, _class * PlayerSpriteRowHeight );
+
+    cmd.actorParty = Party_Players;
+    cmd.actorIndex = playerId;
+
+    curActorIndex = playerId;
+
+    curUpdate = UpdateOpenMenu;
+}
+
+void GotoFirstMenu()
+{
+    int firstPlayerId = FindNextActivePlayer( -1 );
+
+    if ( firstPlayerId != NoneIndex )
+        GotoOpenMenu( firstPlayerId );
+    else
+        GotoFirstCommand();
+}
+
+void UpdateRunMenu()
+{
+    MenuAction menuAction = Menu_None;
+    Menu* nextMenu = nullptr;
+
+    menuAction = activeMenu->Update( nextMenu );
+
+    if ( menuAction == Menu_Push )
+    {
+        nextMenu->prevMenu = activeMenu;
+        activeMenu = nextMenu;
+    }
+    else if ( menuAction == Menu_Pop )
+    {
+        Menu* menu = activeMenu;
+        activeMenu = activeMenu->prevMenu;
+        delete menu;
+
+        if ( activeMenu == nullptr )
+        {
+            int next = FindPrevActivePlayer();
+            if ( next == NoneIndex )
+                next = curActorIndex;
+
+            GotoCloseMenu( next );
+        }
+    }
+    else if ( menuAction == Menu_PopAll )
+    {
+        while ( activeMenu != nullptr )
+        {
+            Menu* menu = activeMenu;
+            activeMenu = activeMenu->prevMenu;
+            delete menu;
+        }
+
+        int next = FindNextActivePlayer();
+        GotoCloseMenu( next );
+    }
+}
+
+void GotoRunMenu()
+{
+    int playerId = curActorIndex;
+    int _class = Player::Party[playerId]._class;
+    playerSprites[playerId]->SetFrames( standFrames, _class * PlayerSpriteRowHeight );
+
+    activeMenu = new BattleMenu();
+    activeMenu->prevMenu = nullptr;
+
+    curUpdate = UpdateRunMenu;
+}
+
+void UpdateCloseMenu()
+{
+    int playerId = curActorIndex;
+    Sprite* sprite = playerSprites[playerId];
+
+    if ( sprite->GetX() < PartyX )
+    {
+        sprite->SetX( sprite->GetX() + 2 );
+    }
+    else
+    {
+        UpdateIdleSprite( playerId );
+
+        if ( gNextPlayerId == NoneIndex )
+        {
+            UndoAllCommands( commands );
+            GotoFirstCommand();
+        }
+        else
+        {
+            if ( gNextPlayerId > curActorIndex )
+            {
+                CommitCommand( commands[curActorIndex] );
+            }
+            else if ( gNextPlayerId < curActorIndex )
+            {
+                UndoCommand( commands[gNextPlayerId] );
+            }
+
+            GotoOpenMenu( gNextPlayerId );
+        }
+    }
+}
+
+void GotoCloseMenu( int nextPlayerId )
+{
+    int playerId = curActorIndex;
+    int _class = Player::Party[playerId]._class;
+    playerSprites[playerId]->SetFrames( walkFrames, _class * PlayerSpriteRowHeight );
+
+    gNextPlayerId = nextPlayerId;
+
+    curUpdate = UpdateCloseMenu;
+}
+
+void GotoFirstCommand()
+{
+    gAtEndOfRound = false;
+    PrepActions();
+    ResetRunningCommands();
+    GotoNextCommand();
+}
+
+void GotoCheckWonOrLost()
+{
+    UpdateAllIdleSprites();
+
+    if ( HasLost() )
+        GotoLost();
+    else if ( HasWon() )
+        GotoWon();
+    else
+        GotoFirstMenu();
+}
+
+void GotoAutoHP()
+{
+    resultCount = 0;
+
+    CalcEnemyAutoHP( actionResults, resultCount );
+
+    // if all enemies die by poison, then the battle was won,
+    // even if players could have died by poison
+
+    if ( !HasWon() )
+        CalcPlayerAutoHP( actionResults, resultCount );
+
+    if ( resultCount > 0 )
+    {
+        gAtEndOfRound = true;
+        curCmd.actorParty = Party_None;
+        curCmd.action = Action_None;
+
+        GotoNumbers();
+    }
+    else
+    {
+        GotoCheckWonOrLost();
+    }
+}
+
+void GotoNextCommandPtb()
+{
+    if ( curActorIndex < MaxActors )
+        curActorIndex++;
+
+    if ( AreCommandsFinished() )
+    {
+        // no matter what kind of encounter was started, after the first round, it's normal
+        SetEncounterType( Encounter_Normal );
+
+        GotoAutoHP();
+    }
+    else
+    {
+        GotoRunCommand();
+    }
+}
+
+void GotoTryRecoverDisabling()
+{
+    int actorId = shuffledActors[curActorIndex];
+
+    if ( (actorId & PlayerFlag) != 0 )
+    {
+        int playerId = actorId & ~PlayerFlag;
+        Player::Character& player = Player::Party[playerId];
+
+        if ( (player.status & Status_Paralysis) != 0 )
+        {
+            int r = GetNextRandom( 100 );
+            if ( r < 25 )
+                player.status &= ~Status_Paralysis;
+        }
+
+        if ( (player.status & Status_Sleep) != 0 )
+        {
+            int r = GetNextRandom( 81 );
+            if ( r < player.maxHp )
+                player.status &= ~Status_Sleep;
+        }
+
+        UpdateIdleSprite( playerId );
+    }
+    else
+    {
+        int enemyId = actorId;
+        Enemy& enemy = enemies[enemyId];
+
+        if ( (enemy.Status & Status_Paralysis) != 0 )
+        {
+            int r = GetNextRandom( 256 );
+            if ( r < 25 )
+                enemy.Status &= ~Status_Paralysis;
+        }
+
+        if ( (enemy.Status & Status_Sleep) != 0 )
+        {
+            int r = GetNextRandom( 81 );
+            if ( r < enemyAttrs[enemy.Type].Hp )
+                enemy.Status &= ~Status_Sleep;
+        }
+    }
+
+    GotoEndOfTurn();
+}
+
+void ResetRunningCommands()
+{
+    curActorIndex = -1;
+}
+
+bool AreCommandsFinished()
+{
+    return curActorIndex == MaxActors;
+}
+
+void ShuffleActors()
+{
+    for ( int i = 0; i < MaxActors; i++ )
+    {
+        if ( i < Player::PartySize )
+            shuffledActors[i] = i | PlayerFlag;
+        else
+            shuffledActors[i] = i - Player::PartySize;
+    }
+
+    ShuffleArray( shuffledActors, MaxActors );
+}
+
+void PrepActions()
+{
+    MakeDisabledPlayerActions( commands );
+    ShuffleActors();
+}
+
+#endif // !ATB
 
 
 //----------------------------------------------------------------------------
