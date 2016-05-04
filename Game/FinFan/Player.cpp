@@ -266,7 +266,7 @@ namespace Player
         vehicles = Vehicle_Foot;
         activeVehicle = Vehicle_Foot;
         playerPos.X = 153;
-        playerPos.Y = 165;
+        playerPos.Y = 162;
         shipPos.X = 210;
         shipPos.Y = 153;
         airshipPos.X = 221;

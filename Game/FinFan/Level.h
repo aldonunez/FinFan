@@ -69,6 +69,7 @@ class Level : public IModule, public IPlayfield
     static const int WorldWidth = ColCount * TileWidth;
     static const int WorldHeight = RowCount * TileHeight;
     static const int MapCount = 64;
+    static const int TileSets = 8;
     static const int SwapTeleports = 64;
     static const int ExitTeleports = 16;
     static const int FirstLevelDomain = 64;

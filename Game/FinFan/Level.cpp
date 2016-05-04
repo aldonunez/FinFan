@@ -106,7 +106,7 @@ Level::~Level()
 
 void Level::Init( int mapId, int startCol, int startRow, int inRoomState )
 {
-    const int AllTileAttrCount = MapCount * TileTypes;
+    const int AllTileAttrCount = TileSets * TileTypes;
     const int AllObjSpecCount = MapCount * Objects;
 
     Table<uint8_t, MapCount> compressedMaps;
