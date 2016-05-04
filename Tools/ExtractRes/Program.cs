@@ -1336,6 +1336,7 @@ namespace ExtractRes
                         int attrBase = LTileAttr + tileset.Pattern * 0x80;
 
                         ExtractTiles( reader, paletteBase, tileBuildBase, attrBase, chrBase, bmp, y );
+                        ExtractExtraTiles( reader, paletteBase, i, false, attrBase, chrBase, bmp, y );
 
                         string filename = string.Format( 
                             options.MakeOutPath( @"levelTilesOut{0:X2}.png" ), i );
@@ -1356,6 +1357,7 @@ namespace ExtractRes
                         int attrBase = LTileAttr + tileset.Pattern * 0x80;
 
                         ExtractTiles( reader, paletteBase, tileBuildBase, attrBase, chrBase, bmp, y );
+                        ExtractExtraTiles( reader, paletteBase, i, true, attrBase, chrBase, bmp, y );
 
                         string filename = string.Format( 
                             options.MakeOutPath( @"levelTilesIn{0:X2}.png" ), i );
@@ -1431,6 +1433,52 @@ namespace ExtractRes
 
                 bmp.Save( options.MakeOutPath( @"owTiles.png" ), ImageFormat.Png );
             }
+        }
+
+        private static void ExtractExtraTiles(
+            BinaryReader reader, int paletteBase, int tileset, bool inside,
+            int attrBase, int chrBase, Bitmap bmp, int baseY )
+        {
+            byte[] buf = new byte[64];
+            if ( inside )
+            {
+                // Tile data for two open chest bitmaps that I made based on the original closed ones.
+                string resName;
+                if ( tileset == 0x13 )
+                    resName = "ExtractRes.Data.OpenChest2.bin";
+                else
+                    resName = "ExtractRes.Data.OpenChest1.bin";
+                using ( var stream = GetResourceStream( resName ) )
+                {
+                    stream.Read( buf, 0, buf.Length );
+                }
+            }
+            else
+            {
+                for ( int i = 0; i < buf.Length; i++ )
+                    buf[i] = 0xFF;
+            }
+            MemoryStream memStream = new MemoryStream( buf );
+            BinaryReader tileReader = new BinaryReader( memStream );
+
+            reader.BaseStream.Position = paletteBase;
+
+            Palette[] pals = new Palette[4];
+            for ( int j = 0; j < 4; j++ )
+            {
+                pals[j] = new Palette();
+                reader.Read( pals[j].Indexes, 0, 4 );
+            }
+
+            Color[] colors = new Color[4];
+
+            for ( int j = 0; j < 4; j++ )
+                colors[j] = DefaultSystemPalette.Colors[pals[0].Indexes[j]];
+
+            DrawTile( tileReader, bmp, colors, 0xF0, 0x70 );
+            DrawTile( tileReader, bmp, colors, 0xF0 + 8, 0x70 );
+            DrawTile( tileReader, bmp, colors, 0xF0, 0x70 + 8 );
+            DrawTile( tileReader, bmp, colors, 0xF0 + 8, 0x70 + 8 );
         }
 
         private static void ExtractTiles(
@@ -2416,6 +2464,12 @@ namespace ExtractRes
         static int FlipNibble( int b )
         {
             return ((b & 1) << 3) | ((b & 2) << 1) | ((b & 4) >> 1) | ((b & 8) >> 3);
+        }
+
+        private static Stream GetResourceStream( string name )
+        {
+            var asm = System.Reflection.Assembly.GetExecutingAssembly();
+            return asm.GetManifestResourceStream( name );
         }
     }
 }

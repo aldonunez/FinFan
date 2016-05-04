@@ -184,7 +184,7 @@ private:
     void RefreshVisibleObjects();
     void MakeObjectSprite( int index );
     void CheckTile( int col, int row, CheckResult& result );
-    void OpenChest( int chestId, CheckResult& result );
+    void OpenChest( int chestId, int col, int row, CheckResult& result );
     bool CanWalk( int col, int row );
     bool CanWalkSpecial( int col, int row );
 
@@ -202,9 +202,12 @@ private:
     Point GetFacingRowCol( Direction direction );
 
     int GetTileRef( int col, int row );
+    void SetTileRef( int col, int row, int tileRef );
 
     int GetBattleFormation();
     void DealMoveDamage( int col, int row );
 
     void CheckPendingAction();
+
+    void ChangeTiles();
 };

@@ -29,6 +29,16 @@ enum
     Tile_UnlockedDoor   = 0x36,
     Tile_OpenDoor       = 0x37,
     Tile_LockedDoor     = 0x3b,
+
+    // This tile didn't exist in the original. Now it's shown using the two open chest bitmaps 
+    // that I made and the extractor writes. One is for the futuristic tileset of the Sky Castle.
+    // The other is for all other levels.
+
+    // This tile's attributes are left 0, which means that when you check an open chest, it says 
+    // "Nothing here". If instead you wanted it to say "The treasure box is empty!" like in the 
+    // original game, give it the chest attribute and a suitable chest ID.
+
+    Tile_OpenChest      = 0x7f,
 };
 
 
@@ -179,6 +189,7 @@ void Level::Init( int mapId, int startCol, int startRow, int inRoomState )
     backdrop = backdrops[mapId];
 
     DecompressMap( compressedMaps.GetItem( mapId ), (uint8_t*) tileRefs );
+    ChangeTiles();
 
     playerCol = startCol;
     playerRow = startRow;
@@ -200,6 +211,25 @@ void Level::Init( int mapId, int startCol, int startRow, int inRoomState )
     Sound::PlayTrack( song, 0, true );
 
     SceneStack::BeginFade( 15, Color::Black(), Color::Transparent(), [] {} );
+}
+
+void Level::ChangeTiles()
+{
+    for ( int row = 0; row < RowCount; row++ )
+    {
+        for ( int col = 0; col < ColCount; col++ )
+        {
+            uint8_t ref = tileRefs[row][col];
+            uint16_t attrs = tileAttr[ref];
+
+            if ( LTile::GetSpecial( attrs ) == LTile::S_Treasure )
+            {
+                int chestId = LTile::GetChest( attrs );
+                if ( Player::GetChestOpened( chestId ) )
+                    tileRefs[row][col] = Tile_OpenChest;
+            }
+        }
+    }
 }
 
 void Level::MakeObjects( const ObjectSpec* objSpecs, int count )
@@ -417,6 +447,11 @@ Point Level::GetFacingRowCol( Direction direction )
 int Level::GetTileRef( int col, int row )
 {
     return tileRefs[row][col];
+}
+
+void Level::SetTileRef( int col, int row, int tileRef )
+{
+    tileRefs[row][col] = tileRef;
 }
 
 void Level::OpenDoor( int col, int row )
@@ -681,7 +716,7 @@ void Level::CheckObject( int type, CheckResult& result )
     teleportId = result.TeleportId;
 }
 
-void Level::OpenChest( int chestId, CheckResult& result )
+void Level::OpenChest( int chestId, int col, int row, CheckResult& result )
 {
     if ( Player::GetChestOpened( chestId ) )
     {
@@ -703,6 +738,7 @@ void Level::OpenChest( int chestId, CheckResult& result )
                     Sound::PushTrack( Sound_GotItem, 0 );
 
                 Player::SetChestOpened( chestId, true );
+                SetTileRef( col, row, Tile_OpenChest );
                 result.Message = Dialog_OpenChest;
                 result.ItemName = Player::GetItemName( itemId );
             }
@@ -718,6 +754,7 @@ void Level::OpenChest( int chestId, CheckResult& result )
             Sound::PushTrack( Sound_GotItem, 0 );
 
             Player::SetChestOpened( chestId, true );
+            SetTileRef( col, row, Tile_OpenChest );
             result.Message = Dialog_OpenChest;
             result.ItemName = Player::GetItemName( itemId );
         }
@@ -736,7 +773,7 @@ void Level::CheckTile( int col, int row, CheckResult& result )
     {
         int chestId = LTile::GetChest( attrs );
 
-        OpenChest( chestId, result );
+        OpenChest( chestId, col, row, result );
     }
     else if ( LTile::HasMessage( attrs ) )
     {
