@@ -583,6 +583,13 @@ void Overworld::UpdateMoving()
                 { SceneStack::EnterBattle( formationId, tileBackdrops[tile] ); } );
             Sound::PlayEffect( SEffect_Fight );
         }
+        else
+        {
+            if ( curUpdate != &Overworld::UpdateMoving )
+            {
+                (this->*curUpdate)();
+            }
+        }
     }
 }
 

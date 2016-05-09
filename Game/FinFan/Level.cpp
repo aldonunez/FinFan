@@ -345,9 +345,7 @@ void Level::ShiftMap( int shiftX, int shiftY )
 void Level::Draw()
 {
     DrawMap();
-
     DrawPlayer();
-
     DrawObjects();
 
     if ( !dialog.IsClosed() )
@@ -893,11 +891,12 @@ void Level::UpdateMoving()
 
         curUpdate = &Level::UpdateFootIdle;
 
-        CheckPendingAction();
+        if ( !CheckPendingAction() )
+            UpdateFootIdle();
     }
 }
 
-void Level::CheckPendingAction()
+bool Level::CheckPendingAction()
 {
     Point curRowCol = GetPlayerRowCol();
     uint8_t ref = GetTileRef( curRowCol.X, curRowCol.Y );
@@ -909,6 +908,7 @@ void Level::CheckPendingAction()
         SceneStack::BeginFade( 15, Color::Transparent(), Color::Black(), 
             [this] { SceneStack::EnterBattle( formationId, backdrop ); } );
         Sound::PlayEffect( SEffect_Fight );
+        return true;
     }
     else if ( shopPending )
     {
@@ -926,6 +926,7 @@ void Level::CheckPendingAction()
                 playerSprite->SetDirection( Dir_Down );
             };
         SceneStack::BeginFade( 15, Color::Transparent(), Color::Black(), p );
+        return true;
     }
     else
     {
@@ -962,8 +963,10 @@ void Level::CheckPendingAction()
                     [this, teleport] 
                     { SceneStack::PushLevel( teleport.MapId, teleport.Col, teleport.Row ); } );
             }
+            return true;
         }
     }
+    return false;
 }
 
 IPlayfield* Level::AsPlayfield()

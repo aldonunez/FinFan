@@ -208,7 +208,7 @@ private:
     int GetBattleFormation();
     void DealMoveDamage( int col, int row );
 
-    void CheckPendingAction();
+    bool CheckPendingAction();
 
     void ChangeTiles();
 };
