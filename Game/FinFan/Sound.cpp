@@ -74,6 +74,7 @@ static const char* effectFiles[SEffect_Max] =
     "ff1-sfx-lift.wav",
     "ff1-sfx-land.wav",
     "ff1-sfx-airship.wav",
+    "ff1-sfx-lava.wav",
 };
 
 

@@ -903,6 +903,9 @@ void Level::UpdateMoving()
 
     ShiftMap( shiftX, shiftY );
 
+    if ( flashMove )
+        Sound::PlayEffect( SEffect_Lava );
+
     if ( offsetX == 0 && offsetY == 0 )
     {
         movingDir = Dir_None;

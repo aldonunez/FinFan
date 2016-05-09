@@ -51,6 +51,7 @@ enum SEffectId
     SEffect_Lift,
     SEffect_Land,
     SEffect_Airship,
+    SEffect_Lava,
 
     SEffect_Max
 };
