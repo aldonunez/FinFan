@@ -142,6 +142,8 @@ class Level : public IModule, public IPlayfield
     int shopId;
     int origShopDoor;
 
+    bool flashMove;
+
 public:
     Level();
     ~Level();

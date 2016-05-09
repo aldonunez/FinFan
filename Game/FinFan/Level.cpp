@@ -15,6 +15,7 @@
 #include "Ids.h"
 #include "SceneStack.h"
 #include "Sound.h"
+#include <allegro5\allegro_primitives.h>
 
 
 enum
@@ -73,7 +74,8 @@ Level::Level()
         teleportId( 0 ),
         shopPending( false ),
         shopId( 0 ),
-        origShopDoor( 0 )
+        origShopDoor( 0 ),
+        flashMove( false )
 {
     instance = this;
 
@@ -350,6 +352,20 @@ void Level::Draw()
 
     if ( !dialog.IsClosed() )
         dialog.Draw();
+
+    if ( flashMove )
+    {
+        int offset = offsetX + offsetY;
+        bool flashNow = (offset & 1) == 1;
+        if ( flashNow )
+        {
+            int op, src, dst;
+            al_get_blender( &op, &src, &dst );
+            al_set_blender( ALLEGRO_ADD, ALLEGRO_ONE, ALLEGRO_ONE );
+            al_draw_filled_rectangle( 0, 0, StdViewWidth, StdViewHeight, al_map_rgb( 128, 128, 128 ) );
+            al_set_blender( op, src, dst );
+        }
+    }
 }
 
 void Level::DrawMap()
@@ -800,7 +816,10 @@ void Level::DealMoveDamage( int col, int row )
     uint16_t attrs = tileAttr[ref];
 
     if ( LTile::GetSpecial( attrs ) == LTile::S_Damage )
+    {
         DealTileDamage();
+        flashMove = true;
+    }
 
     Player::DealPoisonDamage();
 }
@@ -888,6 +907,7 @@ void Level::UpdateMoving()
     {
         movingDir = Dir_None;
         playerSprite->Stop();
+        flashMove = false;
 
         curUpdate = &Level::UpdateFootIdle;
 
