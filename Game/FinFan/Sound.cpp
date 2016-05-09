@@ -117,11 +117,11 @@ static void PlayTrackInternal( int trackId, int streamId, bool loop, bool play )
 
 bool Sound::Init()
 {
-    defaultVoice = al_create_voice( 44100, ALLEGRO_AUDIO_DEPTH_INT16, ALLEGRO_CHANNEL_CONF_1 );
+    defaultVoice = al_create_voice( 44100, ALLEGRO_AUDIO_DEPTH_INT16, ALLEGRO_CHANNEL_CONF_2 );
     if ( defaultVoice == nullptr )
         return false;
 
-    defaultMixer = al_create_mixer( 44100, ALLEGRO_AUDIO_DEPTH_INT16, ALLEGRO_CHANNEL_CONF_1 );
+    defaultMixer = al_create_mixer( 44100, ALLEGRO_AUDIO_DEPTH_INT16, ALLEGRO_CHANNEL_CONF_2 );
     if ( defaultMixer == nullptr )
         return false;
 
