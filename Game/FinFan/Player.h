@@ -170,7 +170,7 @@ namespace Player
     void CalcDerivedStats( int playerId );
     void SwitchPlayers( int id1, int id2 );
     void FullyRevive( int playerId );
-    void DealPoisonDamage();
+    bool DealPoisonDamage();
 
     int GetG();
     void SubG( int value );

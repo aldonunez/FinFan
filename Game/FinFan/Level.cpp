@@ -75,7 +75,8 @@ Level::Level()
         shopPending( false ),
         shopId( 0 ),
         origShopDoor( 0 ),
-        flashMove( false )
+        flashMove( false ),
+        poisonMove( false )
 {
     instance = this;
 
@@ -821,7 +822,8 @@ void Level::DealMoveDamage( int col, int row )
         flashMove = true;
     }
 
-    Player::DealPoisonDamage();
+    if ( Player::DealPoisonDamage() )
+        poisonMove = true;
 }
 
 void Level::UpdateFootIdle()
@@ -906,11 +908,15 @@ void Level::UpdateMoving()
     if ( flashMove )
         Sound::PlayEffect( SEffect_Lava );
 
+    if ( poisonMove )
+        Sound::PlayEffect( SEffect_Step );
+
     if ( offsetX == 0 && offsetY == 0 )
     {
         movingDir = Dir_None;
         playerSprite->Stop();
         flashMove = false;
+        poisonMove = false;
 
         curUpdate = &Level::UpdateFootIdle;
 

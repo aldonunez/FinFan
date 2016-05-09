@@ -42,7 +42,8 @@ Overworld::Overworld()
         movingDir( Dir_None ),
         curUpdate( &Overworld::UpdateFootIdle ),
         shopPending( false ),
-        shopId ( 0 )
+        shopId ( 0 ),
+        poisonMove( false )
 {
     instance = this;
 }
@@ -304,7 +305,8 @@ void Overworld::UpdateFootIdle()
 
             curUpdate = &Overworld::UpdateMoving;
 
-            Player::DealPoisonDamage();
+            if ( Player::DealPoisonDamage() )
+                poisonMove = true;
         }
     }
 }
@@ -487,10 +489,14 @@ void Overworld::UpdateMoving()
     vehicleSprite->SetX( (uint32_t) (vehicleSprite->GetX() + shiftX) % (ColCount*TileWidth) );
     vehicleSprite->SetY( (uint32_t) (vehicleSprite->GetY() + shiftY) % (RowCount*TileHeight) );
 
+    if ( poisonMove )
+        Sound::PlayEffect( SEffect_Step );
+
     if ( offsetX == 0 && offsetY == 0 )
     {
         movingDir = Dir_None;
         vehicleSprite->Stop();
+        poisonMove = false;
 
         Point curCell = GetPlayerRowCol();
         uint8_t ref = GetTileRef( curCell.X, curCell.Y );

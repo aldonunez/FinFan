@@ -71,6 +71,8 @@ class Overworld : public IModule, public IPlayfield
     bool shopPending;
     int shopId;
 
+    bool poisonMove;
+
 public:
     Overworld();
     ~Overworld();

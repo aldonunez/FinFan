@@ -439,8 +439,10 @@ namespace Player
         }
     }
 
-    void DealPoisonDamage()
+    bool DealPoisonDamage()
     {
+        bool hasPoison = false;
+
         for ( int i = 0; i < Players; i++ )
         {
             Player::Character& player = Player::Party[i];
@@ -450,7 +452,12 @@ namespace Player
             {
                 player.hp--;
             }
+
+            if ( (player.status & Status_Poison) != 0 )
+                hasPoison = true;
         }
+
+        return hasPoison;
     }
 
     int GetG()
