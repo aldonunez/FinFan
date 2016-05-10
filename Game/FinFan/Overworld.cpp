@@ -184,6 +184,12 @@ void Overworld::Update()
     (this->*curUpdate)();
 
     vehicleSprite->Update();
+
+    if (  (Player::GetVehicles() & Vehicle_Airship) != 0 
+        && Player::GetAirshipVisibility() < 0x1F )
+    {
+        Player::SetAirshipVisibility( Player::GetAirshipVisibility() + 1 );
+    }
 }
 
 void Overworld::UpdateLift()
@@ -847,7 +853,8 @@ void Overworld::DrawVehicles()
         if ( activeVehicle != Vehicle_Airship )
         {
             Point pos = Player::GetAirshipRowCol();
-            DrawImage( pos.X, pos.Y, 0, 16 );
+            if ( (Player::GetAirshipVisibility() & 1) == 1 )
+                DrawImage( pos.X, pos.Y, 0, 16 );
         }
     }
 }

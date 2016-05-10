@@ -63,6 +63,7 @@ namespace Player
     Point playerPos;
     Point shipPos;
     Point airshipPos;
+    uint8_t airshipVisibility;
     bool isCanalBlocked;
     bool isBridgeVisible;
     bool wasOpeningScenePlayed;
@@ -271,6 +272,7 @@ namespace Player
         shipPos.Y = 153;
         airshipPos.X = 221;
         airshipPos.Y = 237;
+        airshipVisibility = 0;
         isCanalBlocked = true;
         isBridgeVisible = false;
         wasOpeningScenePlayed = false;
@@ -300,6 +302,7 @@ namespace Player
         fread( &shipPos, sizeof shipPos, 1, file );
         fread( &airshipPos, sizeof airshipPos, 1, file );
         fread( &playerPos, sizeof playerPos, 1, file );
+        fread( &airshipVisibility, sizeof airshipVisibility, 1, file );
         fread( &isCanalBlocked, sizeof isCanalBlocked, 1, file );
         fread( &isBridgeVisible, sizeof isBridgeVisible, 1, file );
         fread( &wasOpeningScenePlayed, sizeof wasOpeningScenePlayed, 1, file );
@@ -328,6 +331,7 @@ namespace Player
         fwrite( &shipPos, sizeof shipPos, 1, file );
         fwrite( &airshipPos, sizeof airshipPos, 1, file );
         fwrite( &playerPos, sizeof playerPos, 1, file );
+        fwrite( &airshipVisibility, sizeof airshipVisibility, 1, file );
         fwrite( &isCanalBlocked, sizeof isCanalBlocked, 1, file );
         fwrite( &isBridgeVisible, sizeof isBridgeVisible, 1, file );
         fwrite( &wasOpeningScenePlayed, sizeof wasOpeningScenePlayed, 1, file );
@@ -817,6 +821,16 @@ namespace Player
     void SetPlayerPos( const Point& position )
     {
         playerPos = position;
+    }
+
+    int GetAirshipVisibility()
+    {
+        return airshipVisibility;
+    }
+
+    void SetAirshipVisibility( int visibility )
+    {
+        airshipVisibility = visibility;
     }
 
     bool IsCanalBlocked()

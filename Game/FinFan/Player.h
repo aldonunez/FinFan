@@ -208,6 +208,9 @@ namespace Player
     Point GetPlayerPos();
     void SetPlayerPos( const Point& position );
 
+    int GetAirshipVisibility();
+    void SetAirshipVisibility( int visibility );
+
     bool IsCanalBlocked();
     void SetCanalBlocked( bool value );
 
