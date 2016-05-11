@@ -250,6 +250,130 @@ IModule* OpeningScene::Make()
 
 
 //----------------------------------------------------------------------------
+//  TheEndAnim
+//----------------------------------------------------------------------------
+
+TheEndAnim::TheEndAnim()
+    :   theEndPic( nullptr ),
+        state( Outline ),
+        x( TheEndStartX ),
+        y( TheEndStartY ),
+        xfill( 0 ),
+        progPtr( theEndProg )
+{
+}
+
+TheEndAnim::~TheEndAnim()
+{
+    if ( theEndPic != nullptr )
+    {
+        al_destroy_bitmap( theEndPic );
+        theEndPic = nullptr;
+    }
+}
+
+void TheEndAnim::Init()
+{
+    if ( !LoadList( "theEndProg.dat", theEndProg, TheEndProgSize ) )
+        return;
+
+    if ( !LoadList( "theEndMask.dat", theEndMask, TheEndMaskSize ) )
+        return;
+
+    theEndPic = al_create_bitmap( 80, 80 );
+    if ( theEndPic == nullptr )
+        return;
+}
+
+void TheEndAnim::Update()
+{
+    ALLEGRO_BITMAP* origBmp = al_get_target_bitmap();
+    al_set_target_bitmap( theEndPic );
+
+    if ( state == Outline )
+    {
+        if ( *progPtr == 0 )
+        {
+            state = Trace;
+            progPtr = theEndProg;
+            x = TheEndStartX;
+            y = TheEndStartY;
+        }
+        else
+        {
+            MovePen();
+            DrawPixel( x, y );
+        }
+    }
+    else if ( state == Trace )
+    {
+        if ( *progPtr == 0 )
+        {
+            state = Done;
+        }
+        else
+        {
+            int b = *progPtr;
+
+            if ( (theEndMask[y] != 0)
+                && (b == 2 || b == 3 || b == 7) )
+            {
+                xfill = x;
+                state = FillLine;
+            }
+            else
+            {
+                MovePen();
+            }
+        }
+    }
+    else if ( state == FillLine )
+    {
+        xfill--;
+
+        if ( xfill < 0 || al_get_pixel( theEndPic, xfill, y ).a != 0 )
+        {
+            state = Trace;
+            MovePen();
+        }
+        else
+        {
+            DrawPixel( xfill, y );
+        }
+    }
+
+    al_set_target_bitmap( origBmp );
+}
+
+void TheEndAnim::Draw()
+{
+    al_draw_bitmap( theEndPic, 64, 40, 0 );
+}
+
+void TheEndAnim::MovePen()
+{
+    int b = *progPtr;
+
+    if ( (b & 8) != 0 )
+        y--;
+    else if ( (b & 2) != 0 )
+        y++;
+
+    if ( (b & 4) != 0 )
+        x--;
+    else if ( (b & 1) != 0 )
+        x++;
+
+    progPtr++;
+}
+
+void TheEndAnim::DrawPixel( int x, int y )
+{
+    al_put_pixel( x + 0.5, y + 0.5, Color::White() );
+}
+
+
+//----------------------------------------------------------------------------
 //  EndingScene
 //----------------------------------------------------------------------------
 
@@ -265,6 +389,7 @@ EndingScene::EndingScene()
 void EndingScene::Init()
 {
     storyBox.Init();
+    theEnd.Init();
 
     backPic = al_load_bitmap( "ending.png" );
     if ( backPic == nullptr )
@@ -276,6 +401,9 @@ void EndingScene::Init()
 void EndingScene::Update()
 {
     storyBox.Update();
+
+    if ( storyBox.IsDone() )
+        theEnd.Update();
 }
 
 void EndingScene::Draw()
@@ -283,6 +411,9 @@ void EndingScene::Draw()
     al_draw_bitmap( backPic, 0, 0, 0 );
 
     storyBox.Draw();
+
+    if ( storyBox.IsDone() )
+        theEnd.Draw();
 }
 
 IPlayfield* EndingScene::AsPlayfield()

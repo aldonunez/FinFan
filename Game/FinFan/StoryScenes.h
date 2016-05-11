@@ -81,9 +81,51 @@ public:
 };
 
 
+class TheEndAnim
+{
+    enum
+    {
+        TheEndProgSize  = 0x400,
+        TheEndMaskSize  = 0x50,
+        TheEndStartX    = 0xC,
+        TheEndStartY    = 0,
+    };
+
+    enum State
+    {
+        Outline,
+        Trace,
+        FillLine,
+        Done,
+    };
+
+    ALLEGRO_BITMAP* theEndPic;
+    State state;
+    int x;
+    int y;
+    int xfill;
+    uint8_t* progPtr;
+    uint8_t theEndProg[TheEndProgSize];
+    uint8_t theEndMask[TheEndMaskSize];
+
+public:
+    TheEndAnim();
+    ~TheEndAnim();
+
+    void Init();
+    void Update();
+    void Draw();
+
+private:
+    void MovePen();
+    void DrawPixel( int x, int y );
+};
+
+
 class EndingScene : public IModule
 {
     StoryBox storyBox;
+    TheEndAnim theEnd;
 
     ALLEGRO_BITMAP* backPic;
 

@@ -182,6 +182,7 @@ namespace ExtractRes
                 ExtractShops( options );
                 ExtractStory( options );
                 ExtractStoryBackgrounds( options );
+                ExtractTheEnd( options );
                 break;
 
             default:
@@ -453,6 +454,20 @@ namespace ExtractRes
                     blank, 
                     109 );
                 bmp.Save( options.MakeOutPath( @"opening.png" ), ImageFormat.Png );
+            }
+        }
+
+        private static void ExtractTheEnd( Options options )
+        {
+            using ( BinaryReader reader = new BinaryReader( File.OpenRead( options.RomPath ) ) )
+            {
+                reader.BaseStream.Position = 0x36010;
+                byte[] prog = reader.ReadBytes( 0x400 );
+                File.WriteAllBytes( options.MakeOutPath( "theEndProg.dat" ), prog );
+
+                reader.BaseStream.Position = 0x365A4;
+                byte[] mask = reader.ReadBytes( 0x50 );
+                File.WriteAllBytes( options.MakeOutPath( "theEndMask.dat" ), mask );
             }
         }
 
