@@ -16,6 +16,7 @@
 #include "Sprite.h"
 #include "SceneStack.h"
 #include "Sound.h"
+#include "Utility.h"
 #include <allegro5\allegro_primitives.h>
 
 
@@ -68,6 +69,7 @@ const int PartyMaxHPRight = 248;
 const int PartyHPRight = PartyMaxHPRight - 4 * 8;
 const int PartyHPLeft = PartyNameLeft + 7 * 8;
 const int EnemyLeft = 16;
+const int EnemyTop = BackdropSegHeight;
 const int EnemyBoxTop = 152;
 const int EnemyInfoTop = 168;
 const int EnemyNameLeft = 8;
@@ -124,6 +126,12 @@ Effect* magicEffects[9];
 bool gShowFullScreenColor;
 bool gShowBackgroundColor;
 ALLEGRO_COLOR gFullScreenColor;
+
+ALLEGRO_BITMAP* chaosOverlay;
+int chaosPixelIndex;
+int chaosTileIndex;
+uint8_t chaosPixelTable[256];
+uint8_t chaosTileTable[256];
 
 
 Bounds standFrames[2] = 
@@ -207,6 +215,7 @@ void Init( int formationId, int backdropId )
     gShowFullScreenColor = false;
     gShowBackgroundColor = false;
     gShowWeapon = false;
+    chaosOverlay = nullptr;
 
     backdrops = al_load_bitmap( "backdrops.png" );
     if ( backdrops == nullptr )
@@ -332,6 +341,12 @@ void Uninit()
         delete magicEffects[i];
         magicEffects[i] = nullptr;
     }
+
+    if ( chaosOverlay != nullptr )
+    {
+        al_destroy_bitmap( chaosOverlay );
+        chaosOverlay = nullptr;
+    }
 }
 
 void DeleteMenus()
@@ -383,6 +398,35 @@ void UpdateAllIdleSprites()
     }
 }
 
+void UpdateChaosOverlay()
+{
+    if (   chaosOverlay == nullptr
+        || chaosPixelIndex == 8 )
+        return;
+
+    unsigned int tile = chaosTileTable[chaosTileIndex];
+    unsigned int col = tile % 0x10;
+    unsigned int row = tile / 0x10;
+    int x = col * 8;
+    int y = (row * 8) + (chaosPixelTable[chaosTileIndex] % 8);
+    chaosPixelTable[chaosTileIndex]++;
+
+    ALLEGRO_BITMAP* origBmp = al_get_target_bitmap();
+    al_set_target_bitmap( chaosOverlay );
+    al_draw_line( x, y, x + 8, y, Color::Black(), 1 );
+    al_set_target_bitmap( origBmp );
+
+    if ( chaosTileIndex < 255 )
+    {
+        chaosTileIndex++;
+    }
+    else
+    {
+        chaosTileIndex = 0;
+        chaosPixelIndex++;
+    }
+}
+
 void Update()
 {
     for ( int i = 0; i < Player::PartySize; i++ )
@@ -391,6 +435,7 @@ void Update()
     }
 
     UpdateState();
+    UpdateChaosOverlay();
 }
 
 void DrawBackdrop()
@@ -514,6 +559,12 @@ void DrawMessage()
     }
 }
 
+void DrawChaosOverlay()
+{
+    if ( chaosOverlay != nullptr )
+        al_draw_bitmap( chaosOverlay, EnemyLeft, EnemyTop, 0 );
+}
+
 void Draw()
 {
     if ( gShowFullScreenColor )
@@ -531,6 +582,7 @@ void Draw()
 
     DrawEnemies();
     DrawEnemyTypes();
+    DrawChaosOverlay();
 
     DrawParty();
     DrawPartyInfo();
@@ -812,6 +864,11 @@ const Formation& GetFormation()
     return formations[gFormationId];
 }
 
+int GetFormationId()
+{
+    return gFormationId;
+}
+
 Enemy* GetEnemies()
 {
     return enemies;
@@ -830,6 +887,33 @@ const EnemyMap* GetEnemyMap()
     case FormType_BigBoss:  return &bossEnemyMap;
     default:                return &smallEnemyMap;
     }
+}
+
+void EnableChaosEffect()
+{
+    if ( chaosOverlay == nullptr )
+    {
+        chaosOverlay = al_create_bitmap( EnemyZoneWidth, EnemyZoneHeight );
+        chaosPixelIndex = 0;
+        chaosTileIndex = 0;
+
+        for ( int i = 0; i < _countof( chaosTileTable ); i++ )
+        {
+            chaosTileTable[i] = i;
+        }
+        ShuffleArray( chaosTileTable, _countof( chaosTileTable ) );
+
+        for ( int i = 0; i < _countof( chaosPixelTable ); i++ )
+        {
+            chaosPixelTable[i] = i;
+        }
+        ShuffleArray( chaosPixelTable, _countof( chaosPixelTable ) );
+    }
+}
+
+bool IsChaosEffectDone()
+{
+    return chaosPixelIndex == 8;
 }
 
 }

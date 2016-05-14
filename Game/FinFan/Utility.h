@@ -8,12 +8,13 @@
 #pragma once
 
 
-void ShuffleArray( int* array, int length )
+template <typename T>
+void ShuffleArray( T* array, int length )
 {
     for ( int i = length - 1; i >= 1; i-- )
     {
         int r = GetNextRandom( i + 1 );
-        int orig = array[i];
+        T orig = array[i];
         array[i] = array[r];
         array[r] = orig;
     }

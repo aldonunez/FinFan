@@ -191,6 +191,7 @@ namespace Battle
 
 
     const Formation& GetFormation();
+    int GetFormationId();
     Enemy* GetEnemies();
     const EnemyMap* GetEnemyMap();
     EncounterType GetEncounterType();
@@ -267,4 +268,7 @@ namespace Battle
     extern Sprite* weaponSprite;
     extern Effect* magicEffects[9];
     extern Effect* curEffect;
+
+    void EnableChaosEffect();
+    bool IsChaosEffectDone();
 }

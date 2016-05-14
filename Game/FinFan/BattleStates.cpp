@@ -11,6 +11,7 @@
 #include "BattleCalc.h"
 #include "BattleEffects.h"
 #include "BattleMenus.h"
+#include "Ids.h"
 #include "Player.h"
 #include "SceneStack.h"
 #include "Sound.h"
@@ -74,6 +75,7 @@ void GotoPlayerCastMagic();
 void GotoDisengage();
 void GotoTryRecoverDisabling();
 void GotoCheckWonOrLost();
+void GotoChaosDie();
 void PrepActions();
 void ResetRunningCommands();
 bool AreCommandsFinished();
@@ -265,6 +267,35 @@ void UpdateWon()
     }
 }
 
+void UpdateWonLastBattle()
+{
+    if ( gTimer == 0 )
+    {
+        if ( gWonState == 0 )
+        {
+            gWonState++;
+            gTimer = 110;
+
+            for ( int i = 0; i < Players; i++ )
+            {
+                if ( Player::IsPlayerAlive( i ) )
+                {
+                    int _class = Player::Party[i]._class;
+                    playerSprites[i]->SetFrames( standFrames, _class * PlayerSpriteRowHeight );
+                }
+            }
+        }
+        else if ( gWonState == 1 )
+        {
+            GotoChaosDie();
+        }
+    }
+    else
+    {
+        gTimer--;
+    }
+}
+
 void GotoWon()
 {
     for ( int i = 0; i < Player::PartySize; i++ )
@@ -276,37 +307,45 @@ void GotoWon()
         }
     }
 
-    int xp = 0;
-    int g = 0;
-
-    for ( int i = 0; i < _countof( enemies ); i++ )
-    {
-        int type = enemies[i].Type;
-
-        if ( type != InvalidEnemyType )
-        {
-            xp += enemyAttrs[type].Xp;
-            g += enemyAttrs[type].G;
-        }
-    }
-
-    gXPWon = xp;
-    gGWon = g;
-
-    Player::AddXP( xp );
-    Player::AddG( g );
-
     Sound::PlayTrack( Sound_Victory, 0, true );
-
-    if ( gXPWon > 0 || gGWon > 0 )
-        gWonState = 0;
-    else
-        gWonState = LastWonState;
-
-    gTimer = 120;
-
     StopInput();
-    curUpdate = UpdateWon;
+
+    if ( GetFormationId() == Fight_Chaos )
+    {
+        gWonState = 0;
+        gTimer = 120;
+        curUpdate = UpdateWonLastBattle;
+    }
+    else
+    {
+        int xp = 0;
+        int g = 0;
+
+        for ( int i = 0; i < _countof( enemies ); i++ )
+        {
+            int type = enemies[i].Type;
+
+            if ( type != InvalidEnemyType )
+            {
+                xp += enemyAttrs[type].Xp;
+                g += enemyAttrs[type].G;
+            }
+        }
+
+        gXPWon = xp;
+        gGWon = g;
+
+        Player::AddXP( xp );
+        Player::AddG( g );
+
+        if ( gXPWon > 0 || gGWon > 0 )
+            gWonState = 0;
+        else
+            gWonState = LastWonState;
+
+        gTimer = 120;
+        curUpdate = UpdateWon;
+    }
 }
 
 void UpdateLost()
@@ -659,6 +698,38 @@ void GotoDisengage()
     curUpdate = UpdateDisengage;
 }
 
+void UpdateAfterChaosDie()
+{
+    if ( gTimer == 0 )
+    {
+        LeaveBattle();
+    }
+    else
+    {
+        gTimer--;
+    }
+}
+
+void GotoAfterChaosDie()
+{
+    gTimer = 120;
+    curUpdate = UpdateAfterChaosDie;
+}
+
+void UpdateChaosDie()
+{
+    if ( IsChaosEffectDone() )
+    {
+        GotoAfterChaosDie();
+    }
+}
+
+void GotoChaosDie()
+{
+    EnableChaosEffect();
+    curUpdate = UpdateChaosDie;
+}
+
 void UpdateEnemyDie()
 {
     Command& cmd = curCmd;
@@ -710,9 +781,15 @@ void UpdateEnemyDie()
 
 void GotoEnemyDie()
 {
-    gTimer = EnemyDieFrames;
-
-    curUpdate = UpdateEnemyDie;
+    if ( GetFormationId() == Fight_Chaos )
+    {
+        GotoDisengage();
+    }
+    else
+    {
+        gTimer = EnemyDieFrames;
+        curUpdate = UpdateEnemyDie;
+    }
 }
 
 void UpdateNumbers()
