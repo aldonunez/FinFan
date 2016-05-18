@@ -24,6 +24,7 @@ const double FrameTime = 1 / 60.0;
 static ALLEGRO_EVENT_QUEUE* eventQ;
 static ALLEGRO_DISPLAY* display;
 static int frameCounter;
+static int screenScale = 1;
 
 
 void InitPlayer()
@@ -121,6 +122,11 @@ int GetFrameCounter()
     return frameCounter;
 }
 
+int GetScreenScale()
+{
+    return screenScale;
+}
+
 IModule::~IModule()
 {
 }
@@ -143,6 +149,8 @@ static void ResizeView( int screenWidth, int screenHeight )
 
     if ( scale <= 0 )
         scale = 1;
+
+    screenScale = scale;
 
     int viewWidth = StdViewWidth * scale;
     int viewHeight = StdViewHeight * scale;
@@ -212,9 +220,7 @@ static void Run()
             frameCounter++;
 
             Input::Update();
-
             SceneStack::Update();
-
             Sound::Update();
 
             startTime += FrameTime;
@@ -224,7 +230,6 @@ static void Run()
         if ( updated )
         {
             SceneStack::Draw();
-
             al_flip_display();
         }
 

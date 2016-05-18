@@ -126,8 +126,11 @@ Effect* magicEffects[9];
 bool gShowFullScreenColor;
 bool gShowBackgroundColor;
 ALLEGRO_COLOR gFullScreenColor;
+int screenShakeX;
+int screenShakeY;
 
 ALLEGRO_BITMAP* chaosOverlay;
+int chaosPrevTile = 0x82;
 int chaosPixelIndex;
 int chaosTileIndex;
 uint8_t chaosPixelTable[256];
@@ -215,6 +218,8 @@ void Init( int formationId, int backdropId )
     gShowFullScreenColor = false;
     gShowBackgroundColor = false;
     gShowWeapon = false;
+    screenShakeX = 0;
+    screenShakeY = 0;
     chaosOverlay = nullptr;
 
     backdrops = al_load_bitmap( "backdrops.png" );
@@ -400,9 +405,15 @@ void UpdateAllIdleSprites()
 
 void UpdateChaosOverlay()
 {
-    if (   chaosOverlay == nullptr
-        || chaosPixelIndex == 8 )
+    if ( chaosOverlay == nullptr )
         return;
+
+    if ( chaosPixelIndex == 8 )
+    {
+        screenShakeX = 0;
+        screenShakeY = 0;
+        return;
+    }
 
     unsigned int tile = chaosTileTable[chaosTileIndex];
     unsigned int col = tile % 0x10;
@@ -410,6 +421,11 @@ void UpdateChaosOverlay()
     int x = col * 8;
     int y = (row * 8) + (chaosPixelTable[chaosTileIndex] % 8);
     chaosPixelTable[chaosTileIndex]++;
+
+    // ORIGINAL: The original game used (X & 3).
+    screenShakeX = (chaosPrevTile % 3) * GetScreenScale();
+    screenShakeY = (tile % 3) * GetScreenScale();
+    chaosPrevTile = tile;
 
     ALLEGRO_BITMAP* origBmp = al_get_target_bitmap();
     al_set_target_bitmap( chaosOverlay );
@@ -578,6 +594,11 @@ void Draw()
     else
         al_clear_to_color( al_map_rgb( 0, 0, 0 ) );
 
+    ALLEGRO_TRANSFORM origTransform = *al_get_current_transform();
+    ALLEGRO_TRANSFORM t = origTransform;
+    al_translate_transform( &t, screenShakeX, screenShakeY );
+    al_use_transform( &t );
+
     DrawBackdrop();
 
     DrawEnemies();
@@ -605,6 +626,8 @@ void Draw()
     }
 
     DrawMessage();
+
+    al_use_transform( &origTransform );
 }
 
 

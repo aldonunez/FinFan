@@ -222,6 +222,7 @@ const int StdViewHeight = 240;
 int GetNextRandom( int range );
 Direction GetOppositeDir( Direction direction );
 int GetFrameCounter();
+int GetScreenScale();
 
 
 class Color
