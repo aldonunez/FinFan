@@ -116,7 +116,6 @@ void GotoOpenMenuAtb();
 void GotoRunMenuAtb();
 void GotoCloseMenuAtb();
 void SyncStatus();
-void UpdateNone();
 #endif
 
 
@@ -148,6 +147,25 @@ void StopInput()
 #endif
 }
 
+void UpdateNone()
+{
+    // Do nothing.
+}
+
+void LeaveBattleNoCalc()
+{
+#if defined( ATB )
+    // LeaveBattle will be called in the Action thread.
+    // But, the Input thread will still run after this, so don't let it do anything.
+    curInputUpdate = UpdateNone;
+#endif
+
+    // Do nothing while the battle fades out.
+    curUpdate = UpdateNone;
+
+    SceneStack::BeginFade( 12, Color::Transparent(), Color::Black(), [] { SceneStack::LeaveBattle(); } );
+}
+
 void LeaveBattle()
 {
     for ( int i = 0; i < Players; i++ )
@@ -158,13 +176,7 @@ void LeaveBattle()
         Player::CalcDerivedStats( i );
     }
 
-    SceneStack::LeaveBattle();
-
-#if defined( ATB )
-    // LeaveBattle will be called in the Action thread.
-    // But, the Input thread will still run after this, so don't let it do anything.
-    curInputUpdate = UpdateNone;
-#endif
+    LeaveBattleNoCalc();
 }
 
 void GotoEndOfTurn()
@@ -702,7 +714,7 @@ void UpdateAfterChaosDie()
 {
     if ( gTimer == 0 )
     {
-        LeaveBattle();
+        LeaveBattleNoCalc();
     }
     else
     {
@@ -1758,11 +1770,6 @@ void GotoStateAfterOpeningMessageAtb()
         }
 
         GotoNextCommand();
-}
-
-void UpdateNone()
-{
-    // Do nothing.
 }
 
 void UpdateInputIdle()

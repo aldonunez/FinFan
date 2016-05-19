@@ -382,7 +382,8 @@ const int EndingMessages = 21;
 
 EndingScene::EndingScene()
     :   backPic( nullptr ),
-        storyBox( 8, EndingMessages )
+        storyBox( 8, EndingMessages ),
+        timer( 120 )
 {
 }
 
@@ -400,6 +401,12 @@ void EndingScene::Init()
 
 void EndingScene::Update()
 {
+    if ( timer != 0 )
+    {
+        timer--;
+        return;
+    }
+
     storyBox.Update();
 
     if ( storyBox.IsDone() )
@@ -408,6 +415,12 @@ void EndingScene::Update()
 
 void EndingScene::Draw()
 {
+    if ( timer != 0 )
+    {
+        al_clear_to_color( Color::Black() );
+        return;
+    }
+
     al_draw_bitmap( backPic, 0, 0, 0 );
 
     storyBox.Draw();

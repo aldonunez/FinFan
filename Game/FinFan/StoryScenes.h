@@ -128,6 +128,7 @@ class EndingScene : public IModule
     TheEndAnim theEnd;
 
     ALLEGRO_BITMAP* backPic;
+    int timer;
 
 public:
     EndingScene();
