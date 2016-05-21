@@ -119,6 +119,8 @@ public:
 private:
     void MovePen();
     void DrawPixel( int x, int y );
+
+    void UpdateFillLine();
 };
 
 
