@@ -1102,6 +1102,7 @@ namespace ExtractRes
                 new SfxFileDesc { Filename = "ff1-sfx-land.wav", Track = 16, End = 0x21 * 2 },
                 new SfxFileDesc { Filename = "ff1-sfx-airship.wav", Track = 3, End = 60 * 3 },
                 new SfxFileDesc { Filename = "ff1-sfx-lava.wav", Track = 5, End = 5 },
+                new SfxFileDesc { Filename = "ff1-sfx-chaos_rumble.wav", Track = 20, End = 2168 },
             };
 
             for ( int i = 0; i < effects.Length; i++ )
@@ -1113,6 +1114,11 @@ namespace ExtractRes
                 item.End = (short) effects[i].End;
                 ExtractSoundFile( options, item );
             }
+
+            File.Copy(
+                options.MakeOutPath( "ff1-sfx-chaos_rumble.wav" ),
+                options.MakeOutPath( "24_chaos_rumble.wav" ),
+                true );
         }
 
         private static void ExtractSoundFile( Options options, SoundItem item )

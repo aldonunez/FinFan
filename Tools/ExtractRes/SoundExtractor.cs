@@ -117,6 +117,7 @@ namespace ExtractRes
                 tracks.Add( ExtractMagicSfx( image, reader, ref customPtr ) );
                 tracks.Add( ExtractHurtSfx( image, reader, ref customPtr ) );
                 tracks.Add( ExtractStrikeSfx( image, reader, ref customPtr ) );
+                tracks.Add( ExtractChaosRumbleSfx( image, reader, ref customPtr ) );
 
                 ushort initTablePtr = InitTableAddr - ImageBase;
                 ushort playTablePtr = PlayTableAddr - ImageBase;
@@ -558,6 +559,107 @@ namespace ExtractRes
             image[customPtr++] = 0xB8;
             image[customPtr++] = 0xBE;
             return new NsfTrack { Init = initAddr, Play = 0xBF13 };
+        }
+
+        private static NsfTrack ExtractChaosRumbleSfx( byte[] image, BinaryReader reader, ref ushort customPtr )
+        {
+            ushort initAddr = (ushort) (customPtr + ImageBase);
+            reader.BaseStream.Position = 0x2E04D;
+            reader.Read( image, 0xA03D - ImageBase, 21 );
+            // LDA #8
+            image[customPtr++] = 0xA9;
+            image[customPtr++] = 8;
+            // STA @outerctr
+            image[customPtr++] = 0x85;
+            image[customPtr++] = 0x9A;
+            // JMP ChaosDeath_FadeNoise
+            image[customPtr++] = 0x4C;
+            image[customPtr++] = 0x3D;
+            image[customPtr++] = 0xA0;
+
+            ushort playAddr = (ushort) (customPtr + ImageBase);
+            //  LDA @outerctr
+            image[customPtr++] = 0xA5;
+            image[customPtr++] = 0x9A;
+            //  BNE Fade
+            image[customPtr++] = 0xD0;
+            image[customPtr++] = 0x0F;
+            //  LDY $9E
+            image[customPtr++] = 0xA4;
+            image[customPtr++] = 0x9E;
+            //  BEQ DoNothing
+            image[customPtr++] = 0xF0;
+            image[customPtr++] = 0x0A;
+            //  DEY
+            image[customPtr++] = 0x88;
+            //  BNE DecWait
+            image[customPtr++] = 0xD0;
+            image[customPtr++] = 0x05;
+            //  LDA #0
+            image[customPtr++] = 0xA9;
+            image[customPtr++] = 0x00;
+            //  STA $4015
+            image[customPtr++] = 0x8D;
+            image[customPtr++] = 0x15;
+            image[customPtr++] = 0x40;
+            // DecWait:
+            //  STY $9E
+            image[customPtr++] = 0x84;
+            image[customPtr++] = 0x9E;
+            // DoNothing:
+            //  RTS
+            image[customPtr++] = 0x60;
+
+            // Fade:
+            //  LDA @innerctr
+            image[customPtr++] = 0xA5;
+            image[customPtr++] = 0x9B;
+            //  CMP #$80
+            image[customPtr++] = 0xC9;
+            image[customPtr++] = 0x80;
+            //  BNE :+
+            image[customPtr++] = 0xD0;
+            image[customPtr++] = 0x03;
+            //  JSR ChaosDeath_FadeNoise
+            image[customPtr++] = 0x20;
+            image[customPtr++] = 0x3D;
+            image[customPtr++] = 0xA0;
+            // :
+            //  DEC @innerctr
+            image[customPtr++] = 0xC6;
+            image[customPtr++] = 0x9B;
+            //  BNE Done
+            image[customPtr++] = 0xD0;
+            image[customPtr++] = 0x10;
+            //  JSR ChaosDeath_FadeNoise
+            image[customPtr++] = 0x20;
+            image[customPtr++] = 0x3D;
+            image[customPtr++] = 0xA0;
+            //  DEC @outerctr
+            image[customPtr++] = 0xC6;
+            image[customPtr++] = 0x9A;
+            //  BNE OuterLoop
+            image[customPtr++] = 0xD0;
+            image[customPtr++] = 0x05;
+            //  LDA #120
+            image[customPtr++] = 0xA9;
+            image[customPtr++] = 120;
+            //  STA $9E
+            image[customPtr++] = 0x85;
+            image[customPtr++] = 0x9E;
+            //  RTS
+            image[customPtr++] = 0x60;
+            // OuterLoop:
+            //  LDA #0
+            image[customPtr++] = 0xA9;
+            image[customPtr++] = 0x00;
+            //  STA @innerctr
+            image[customPtr++] = 0x85;
+            image[customPtr++] = 0x9B;
+            // Done:
+            //  RTS
+            image[customPtr++] = 0x60;
+            return new NsfTrack { Init = initAddr, Play = playAddr };
         }
     }
 }

@@ -395,8 +395,6 @@ void EndingScene::Init()
     backPic = al_load_bitmap( "ending.png" );
     if ( backPic == nullptr )
         return;
-
-    Sound::PlayTrack( Sound_Ending, 0, false );
 }
 
 void EndingScene::Update()
@@ -404,6 +402,8 @@ void EndingScene::Update()
     if ( timer != 0 )
     {
         timer--;
+        if ( timer == 0 )
+            Sound::PlayTrack( Sound_Ending, 0, false );
         return;
     }
 

@@ -738,6 +738,8 @@ void UpdateChaosDie()
 
 void GotoChaosDie()
 {
+    Sound::StopEffect();
+    Sound::PlayTrack( Sound_ChaosRumble, 0, false );
     EnableChaosEffect();
     curUpdate = UpdateChaosDie;
 }

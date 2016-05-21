@@ -33,6 +33,7 @@ enum SoundId
     Sound_GotItem,
     Sound_Save,
     Sound_Potion,
+    Sound_ChaosRumble,
 };
 
 enum SEffectId

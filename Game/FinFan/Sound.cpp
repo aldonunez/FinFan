@@ -56,6 +56,7 @@ static const char* songFiles[] =
     "21_unknown.wav",
     "22_save.wav",
     "23_unknown.wav",
+    "24_chaos_rumble.wav",
 };
 
 static const char* effectFiles[SEffect_Max] = 
