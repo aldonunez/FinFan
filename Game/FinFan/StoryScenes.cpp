@@ -305,35 +305,33 @@ void TheEndAnim::Update()
             DrawPixel( x, y );
         }
     }
-    else if ( state == Trace )
-    {
-        while ( state == Trace )
-        {
-            if ( *progPtr == 0 )
-            {
-                state = Done;
-            }
-            else
-            {
-                int b = *progPtr;
-
-                if ( (theEndMask[y] != 0)
-                    && (b == 2 || b == 3 || b == 7) )
-                {
-                    xfill = x;
-                    state = FillLine;
-                    UpdateFillLine();
-                }
-                else
-                {
-                    MovePen();
-                }
-            }
-        }
-    }
     else if ( state == FillLine )
     {
         UpdateFillLine();
+    }
+
+    while ( state == Trace )
+    {
+        if ( *progPtr == 0 )
+        {
+            state = Done;
+        }
+        else
+        {
+            int b = *progPtr;
+
+            if ( (theEndMask[y] != 0)
+                && (b == 2 || b == 3 || b == 7) )
+            {
+                xfill = x;
+                state = FillLine;
+                UpdateFillLine();
+            }
+            else
+            {
+                MovePen();
+            }
+        }
     }
 
     al_set_target_bitmap( origBmp );
