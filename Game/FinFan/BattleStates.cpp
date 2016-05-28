@@ -549,6 +549,13 @@ void UpdateEnemyFlee()
 
         enemies[cmd.actorIndex].Type = InvalidEnemyType;
 
+        Enemy* enemy = &enemies[cmd.actorIndex];
+        enemy->Prev->Next = enemy->Next;
+        enemy->Next->Prev = enemy->Prev;
+        enemy->Next = nullptr;
+        enemy->Prev = nullptr;
+        enemy->Counter->Count--;
+
         GotoEndOfTurn();
     }
     else

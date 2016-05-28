@@ -1057,6 +1057,7 @@ namespace ExtractRes
             };
 
             LoopPoints[] loopPoints = ExtractLoopPoints( options );
+            loopPoints[20].End = 30;
             for ( int i = 0; i < loopPoints.Length; i++ )
             {
                 if ( i == songFilenames.Length )
