@@ -16,6 +16,8 @@ namespace ExtractRes
 {
     class Program
     {
+        delegate void Extractor( Options options );
+
         const int LevelXP = 0x2d010;
         const int ClassInitStats = 0x3050;
         const int ItemNamesBase = 0x2b710;
@@ -113,82 +115,98 @@ namespace ExtractRes
         {
             var options = Options.Parse( args );
 
+            if ( options.Error != null )
+            {
+                Console.Error.WriteLine( options.Error );
+                return;
+            }
+
             if ( options.Function == null )
             {
                 Console.WriteLine( "Nothing to work on." );
                 return;
             }
 
-            switch ( options.Function )
+            Dictionary<string, Extractor> extractorMap = new Dictionary<string, Extractor>();
+
+            extractorMap.Add( "enemies", ExtractEnemies );
+            extractorMap.Add( "backdrops", ExtractBackdrops );
+            extractorMap.Add( "battlesprites", ExtractBattleSprites );
+            extractorMap.Add( "mapobjects", ExtractMapObjectsBundle );
+            extractorMap.Add( "overworldtiles", ExtractOverworldTilesBundle );
+            extractorMap.Add( "leveltiles", ExtractLevelTilesBundle );
+            extractorMap.Add( "font", ExtractFont );
+            extractorMap.Add( "player", PlayerExtractor.Extract );
+            extractorMap.Add( "songs", ExtractSongs );
+            extractorMap.Add( "sfx", ExtractSoundEffectsBundle );
+            extractorMap.Add( "menus", ExtractMenusBundle );
+
+            Extractor extractor = null;
+
+            if ( options.Function == "all" )
             {
-            case "enemies":
-                ExtractEnemies( options );
-                break;
-
-            case "backdrops":
-                ExtractBackdrops( options );
-                break;
-
-            case "battlesprites":
-                ExtractBattleSprites( options );
-                break;
-
-            case "mapobjects":
-                ExtractMapObjects( options );
-                ExtractDialogue( options );
-                ExtractTalkData( options );
-                ExtractInitFlags( options );
-                ExtractTreasures( options );
-                ExtractPrices( options );
-                break;
-
-            case "overworldtiles":
-                ExtractOverworldTiles( options );
-                ExtractOverworldTileAttrs( options );
-                ExtractOverworldMap( options );
-                ExtractDomains( options );
-                ExtractEnterTeleports( options );
-                break;
-
-            case "leveltiles":
-                ExtractLevelTiles( options );
-                ExtractLevelTileAttrs( options );
-                ExtractLevelMaps( options );
-                ExtractExitTeleports( options );
-                ExtractSwapTeleports( options );
-                ExtractLevelBattleRates( options );
-                ExtractLevelMusic( options );
-                break;
-
-            case "font":
-                ExtractFont( options );
-                break;
-
-            case "player":
-                PlayerExtractor.Extract( options );
-                break;
-
-            case "song":
-                ExtractSongs( options );
-                break;
-
-            case "sfx":
-                SoundExtractor.MakeSfxNsf( options );
-                ExtractSoundEffects( options );
-                break;
-
-            case "menu":
-                ExtractMenu( options );
-                ExtractShops( options );
-                ExtractStory( options );
-                ExtractStoryBackgrounds( options );
-                ExtractTheEnd( options );
-                break;
-
-            default:
-                Console.WriteLine( "Function not supported: {0}", options.Function );
-                break;
+                foreach ( var pair in extractorMap )
+                {
+                    Console.WriteLine( "Extracting {0} ...", pair.Key );
+                    pair.Value( options );
+                }
             }
+            else if ( extractorMap.TryGetValue( options.Function, out extractor ) )
+            {
+                Console.WriteLine( "Extracting {0} ...", options.Function );
+                extractor( options );
+            }
+            else
+            {
+                Console.Error.WriteLine( "Function not supported: {0}", options.Function );
+            }
+        }
+
+        static void ExtractMapObjectsBundle( Options options )
+        {
+            ExtractMapObjects( options );
+            ExtractDialogue( options );
+            ExtractTalkData( options );
+            ExtractInitFlags( options );
+            ExtractTreasures( options );
+            ExtractPrices( options );
+        }
+
+        static void ExtractOverworldTilesBundle( Options options )
+        {
+            ExtractOverworldTiles( options );
+            ExtractOverworldTileAttrs( options );
+            ExtractOverworldMap( options );
+            ExtractDomains( options );
+            ExtractEnterTeleports( options );
+        }
+
+        static void ExtractLevelTilesBundle( Options options )
+        {
+            ExtractLevelTiles( options );
+            ExtractLevelTileAttrs( options );
+            ExtractLevelMaps( options );
+            ExtractExitTeleports( options );
+            ExtractSwapTeleports( options );
+            ExtractLevelBattleRates( options );
+            ExtractLevelMusic( options );
+        }
+
+        static void ExtractSoundEffectsBundle( Options options )
+        {
+            string nsfPath = Path.GetTempFileName();
+            Console.WriteLine( "Writing SFX NSF '{0}'", nsfPath );
+            SoundExtractor.MakeSfxNsf( nsfPath, options );
+            ExtractSoundEffects( nsfPath, options );
+        }
+
+        static void ExtractMenusBundle( Options options )
+        {
+            ExtractMenu( options );
+            ExtractShops( options );
+            ExtractStory( options );
+            ExtractStoryBackgrounds( options );
+            ExtractTheEnd( options );
         }
 
         struct Enemy
@@ -1068,7 +1086,7 @@ namespace ExtractRes
                 item.Filename = songFilenames[i];
                 item.Begin = (short) loopPoints[i].Begin;
                 item.End = (short) loopPoints[i].End;
-                ExtractSoundFile( options, item );
+                ExtractSoundFile( options.NsfPath, options, item );
             }
 
             File.Copy( 
@@ -1084,7 +1102,7 @@ namespace ExtractRes
             public ushort End;
         }
 
-        private static void ExtractSoundEffects( Options options )
+        private static void ExtractSoundEffects( string nsfPath, Options options )
         {
             SfxFileDesc[] effects = 
             {
@@ -1113,7 +1131,7 @@ namespace ExtractRes
                 item.Filename = effects[i].Filename;
                 item.Begin = 0;
                 item.End = (short) effects[i].End;
-                ExtractSoundFile( options, item );
+                ExtractSoundFile( nsfPath, options, item );
             }
 
             File.Copy(
@@ -1122,13 +1140,13 @@ namespace ExtractRes
                 true );
         }
 
-        private static void ExtractSoundFile( Options options, SoundItem item )
+        private static void ExtractSoundFile( string nsfPath, Options options, SoundItem item )
         {
             const int SampleRate = 44100;
             const double SampleRateMs = SampleRate / 1000.0;
             const double MillisecondsAFrame = 1000.0 / 60.0;
 
-            if ( string.IsNullOrEmpty( options.NsfPath ) )
+            if ( string.IsNullOrEmpty( nsfPath ) )
                 throw new Exception( "An NSF file is needed to extract sound files." );
 
             string outPath = options.MakeOutPath( item.Filename );
@@ -1136,7 +1154,7 @@ namespace ExtractRes
             using ( ExtractNsf.WaveWriter waveWriter = new ExtractNsf.WaveWriter( SampleRate, outPath ) )
             {
                 emu.SampleRate = SampleRate;
-                emu.LoadFile( options.NsfPath );
+                emu.LoadFile( nsfPath );
                 emu.StartTrack( item.Track );
 
                 waveWriter.EnableStereo();

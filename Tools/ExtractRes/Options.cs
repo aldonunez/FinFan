@@ -46,6 +46,7 @@ namespace ExtractRes
                         options.Error = "Output path: " + options.Error;
                         break;
                     }
+                    i++;
                 }
                 else if ( args[i].EqualsIgnore( "-nsf" ) )
                 {
@@ -61,6 +62,7 @@ namespace ExtractRes
                         options.Error = "Nsf path: " + options.Error;
                         break;
                     }
+                    i++;
                 }
             }
 

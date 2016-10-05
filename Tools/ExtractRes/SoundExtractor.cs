@@ -23,12 +23,11 @@ namespace ExtractRes
             public ushort Play;
         }
 
-        public static void MakeSfxNsf( Options options )
+        public static void MakeSfxNsf( string nsfPath, Options options )
         {
             ushort initAddr = 0;
             ushort playAddr = 0;
             ushort customPtr = 0x0200;
-            string nsfPath = options.NsfPath;
             List<NsfTrack> tracks = new List<NsfTrack>();
 
             using ( BinaryReader reader = new BinaryReader( File.OpenRead( options.RomPath ) ) )
