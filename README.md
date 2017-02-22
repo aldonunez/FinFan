@@ -45,6 +45,7 @@ I've enhanced the game to look and feel more like others in the series; in parti
 * The user interface of Battle Mode is like in other games in the series.
 * I implemented Active Time Battle.
     * You turn it on at build time.
+* Treasure chests are shown as open or closed.
 
 ### Who do I talk to? ###
 
