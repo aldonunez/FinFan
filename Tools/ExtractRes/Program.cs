@@ -1496,6 +1496,9 @@ namespace ExtractRes
             }
             else
             {
+                if ( tileset == 0 )
+                    return;
+
                 for ( int i = 0; i < buf.Length; i++ )
                     buf[i] = 0xFF;
             }

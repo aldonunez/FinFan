@@ -88,6 +88,9 @@
       <AdditionalLibraryDirectories>$(ALLEGRO_LIB_ROOT);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>allegro.lib;allegro_audio.lib;allegro_acodec.lib;allegro_image.lib;allegro_primitives.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Battle.h" />
