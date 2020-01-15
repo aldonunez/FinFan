@@ -14,9 +14,7 @@ The ExtractNsf project uses the Game Music Emu library.
 
 ### How do I get set up? ###
 
-The subprojects build with Visual Studio 2010 and depend on the Allegro library (5.2) that you can get with Nuget. You’ll also need a copy of the original ROM and NSF for each game.
-
-After you check out the project, you’ll have to define two variables/macros in you personal project settings: ALLEGRO_INC_ROOT and ALLEGRO_LIB_ROOT.
+The subprojects build with Visual Studio 2010 and depend on the Allegro library (5.2) that is automatically downloaded using Nuget. You’ll also need a copy of the original ROM and NSF for each game.
 
 The remake is divided in two parts: the remade game in the Game folder, and the extractor in the Tools folder. The extractor pulls resources like graphics and data tables out of the original ROM and puts them into a format suitable for the remade game. Build and run the extractor before building and running the remade game.
 
@@ -49,6 +47,6 @@ I've enhanced the game to look and feel more like others in the series; in parti
 
 ### Who do I talk to? ###
 
-Repo owner: Aldo Nunez
+This software is written by Aldo Nunez (aldonunez1@gmail.com).
 
-If you would like to reach out to me, then please look me up at romhacking.net.
+Feel free to reach out to me, if you'd like to learn more about the project.
