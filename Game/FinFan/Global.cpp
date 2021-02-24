@@ -15,6 +15,8 @@ static uint32_t runStartMillis;
 
 int GetNextRandom( int range )
 {
+    // The original game uses two tables of 256 random bytes with indexes for different purposes.
+
     return rand() % range;
 }
 

@@ -18,6 +18,11 @@ namespace Player
         Game_ChestOpened    = 4,
     };
 
+    enum LevelUpAttr
+    {
+        LevelUpAttr_Strong = 0x20,
+    };
+
     struct ClassInit
     {
         uint8_t Class;
@@ -31,13 +36,14 @@ namespace Player
     };
 
     typedef uint8_t SpellCharges[50];
+    typedef uint8_t LevelUpAttrs[50];
 
 
     const int MagicNamesBase = 0xB0;
     const int ClassNamesBase = 0xF0;
     const int GameFlagCount = 256;
 
-    const uint16_t ClassEquitBit[] = 
+    const uint16_t ClassEquipBit[] =
     {
         0x800,
         0x400,
@@ -75,6 +81,7 @@ namespace Player
     MagicAttr       specialAttrs[26];
     int             levelXp[49];
     SpellCharges    spellChargeBoosts[12];
+    LevelUpAttrs    levelUpAttrBoosts[12];
     ClassInit       classInit[12];
     uint16_t        itemNameOffsets[256];
     char*           itemNames;
@@ -172,6 +179,14 @@ namespace Player
         fclose( file );
 
 
+        err = fopen_s( &file, "levelUpAttrs.dat", "rb" );
+        if ( err != 0 )
+            return false;
+
+        fread( levelUpAttrBoosts, sizeof levelUpAttrBoosts, 1, file );
+        fclose( file );
+
+
         err = fopen_s( &file, "initClass.dat", "rb" );
         if ( err != 0 )
             return false;
@@ -248,9 +263,7 @@ namespace Player
 
             for ( int j = 0; j < SpellLevels; j++ )
             {
-                int boost = (spellBoostL1 >> j) & 1;
-
-                player.spellMaxCharge[j] = boost * 2;
+                player.spellMaxCharge[j] = (j == 0) ? spellBoostL1 : 0;
                 player.spellCharge[j] = player.spellMaxCharge[j];
 
                 for ( int k = 0; k < SpellSlots; k++ )
@@ -382,14 +395,14 @@ namespace Player
     {
         uint32_t index = itemId - WeaponsBaseId;
 
-        return (weaponPerms[index] & ClassEquitBit[classId]) == 0;
+        return (weaponPerms[index] & ClassEquipBit[classId]) == 0;
     }
 
     bool CanEquipArmor( int itemId, int classId )
     {
         uint32_t index = itemId - ArmorBaseId;
 
-        return (armorPerms[index] & ClassEquitBit[classId]) == 0;
+        return (armorPerms[index] & ClassEquipBit[classId]) == 0;
     }
 
     ArmorSlot GetArmorType( int itemId )
@@ -540,22 +553,6 @@ namespace Player
         3, 2, 4, 2, 2, 2, 3, 2, 1, 2, 2, 2
     };
 
-    // Index by player class
-    // out of 100
-    const uint8_t StrongLevelUpChances[] = 
-    {
-        50, 35, 40, 25, 30, 25, 50, 35, 40, 25, 30, 25
-    };
-
-    const uint8_t StatRaiseRates[5][12] = 
-    {
-        { 8, 7, 5, 5, 4, 4, 8, 7, 5, 5, 4, 4 },
-        { 6, 6, 5, 5, 4, 3, 6, 6, 5, 5, 4, 3 },
-        { 4, 4, 5, 5, 5, 8, 4, 4, 5, 5, 5, 8 },
-        { 5, 4, 8, 5, 4, 4, 5, 4, 8, 5, 4, 4 },
-        { 6, 8, 5, 5, 5, 4, 6, 8, 5, 5, 5, 4 },
-    };
-
     const uint8_t MaxSpellCharge[12] = 
     {
         0,
@@ -573,15 +570,33 @@ namespace Player
         9,
     };
 
+    int BasicStatIdToBit( int statId )
+    {
+        return 1 << (4 - statId);
+    }
+
     bool CalcPlayerStatRaise( int playerId, int statId )
     {
         int _class = Party[playerId]._class;
-        int rate = StatRaiseRates[statId][_class];
-        int r = GetNextRandom( 8 );
+        int level = Party[playerId].level;
+        int allBoosts = levelUpAttrBoosts[_class][level - 1];
+        int guaranteedBoost = allBoosts & BasicStatIdToBit( statId );
+        bool increase = false;
 
-        if ( r < rate )
+        if ( guaranteedBoost )
         {
-            Party[playerId].basicStats[statId]++;
+            increase = true;
+        }
+        else
+        {
+            int r = GetNextRandom( 4 );
+            increase = (r == 0);
+        }
+
+        if ( increase )
+        {
+            if ( Party[playerId].basicStats[statId] < 100 )
+                Party[playerId].basicStats[statId]++;
             return true;
         }
 
@@ -592,30 +607,41 @@ namespace Player
     {
         Character& character = Party[playerId];
 
+        // Evade goes up 1 every time Agility increases. The 48 comes from:
+        // (initial evade) - (initial agility)
+
         character.evadeRate = character.basicStats[Stat_Agility] + 48;
+        if ( character.evadeRate > 200 )
+            character.evadeRate = 200;
+
         character.hitRate = classInit[character._class].HitRate;
         character.hitRate += (character.level - 1) * HitRateRaises[character._class];
+        if ( character.hitRate > 200 )
+            character.hitRate = 200;
+
         character.magicAbsorb = classInit[character._class].MagicAbsorb;
         character.magicAbsorb += (character.level - 1) * MagicAbsorbRaises[character._class];
+        if ( character.magicAbsorb > 200 )
+            character.magicAbsorb = 200;
+
         character.elemStrength = 0;
+        character.absorb = 0;
+
+        for ( int i = 0; i < Armor_Max; i++ )
+        {
+            int armorId = character.armorIds[i];
+            if ( armorId != NoArmor )
+            {
+                character.absorb += armorAttrs[armorId].Absorb;
+                character.evadeRate -= armorAttrs[armorId].EvadeRate;
+                character.elemStrength |= armorAttrs[armorId].Element;
+            }
+        }
 
         if ( (character._class == Class_BlackBelt || character._class == Class_Master)
-            && character.armorIds[Armor_Body] == NoArmor )
-            character.absorb = character.level;
-        else
+            && character.absorb == 0 )
         {
-            character.absorb = 0;
-
-            for ( int i = 0; i < Armor_Max; i++ )
-            {
-                int armorId = character.armorIds[i];
-                if ( armorId != NoArmor )
-                {
-                    character.absorb += armorAttrs[armorId].Absorb;
-                    character.evadeRate -= armorAttrs[armorId].EvadeRate;
-                    character.elemStrength |= armorAttrs[armorId].Element;
-                }
-            }
+            character.absorb = character.level;
         }
 
         if ( character.evadeRate < 0 )
@@ -628,15 +654,22 @@ namespace Player
         }
         else
         {
-            if ( (character._class == Class_BlackBelt || character._class == Class_Master)
-                || character._class == Class_BlackMage || character._class == Class_BlackWizard )
-            {
-                character.damage = (character.basicStats[Stat_Strength] + 1) / 2;
-            }
-            else
-            {
-                character.damage = character.basicStats[Stat_Strength] / 2;
-            }
+            // The original game adds the carry flag to BB/MA's strength in the
+            // damage calculation when he has no weapon, maybe unintentionally.
+            // So, odd strength => +1, even strength => +0. Keep it simple here.
+
+            // Except that, because the original game increases damage when strength
+            // becomes even, and Black Mage starts with Strength=1 and Damage=1;
+            // this simple calculation would need to be capped at 1.
+
+            // Or, add 2 to give Black Mage the same small boost as in the original.
+
+            int strength = character.basicStats[Stat_Strength];
+
+            if ( classInit[character._class].BasicStats[Stat_Strength] == 1 )
+                strength += 2;
+
+            character.damage = strength / 2;
 
             if ( character.weaponId != NoWeapon )
             {
@@ -671,21 +704,20 @@ namespace Player
     void CalcOneLevelUpBase( int playerId )
     {
         Character& character = Party[playerId];
-        int hpRaise = 0;
-        int r = 0;
 
-        hpRaise = character.basicStats[Stat_Vitality] / 4 + 1;
+        character.level++;
 
-        r = GetNextRandom( 100 );
+        int hpRaise = character.basicStats[Stat_Vitality] / 4 + 1;
 
-        if ( r < StrongLevelUpChances[character._class] )
+        if ( levelUpAttrBoosts[character._class][character.level - 1] & LevelUpAttr_Strong )
         {
             int r = GetNextRandom( 6 );
             hpRaise += 20 + r;
         }
 
-        character.level++;
         character.maxHp += hpRaise;
+
+        // The original game caps the maximum HP at 999.
 
         for ( int j = 0; j < Stat_Max; j++ )
         {
@@ -708,12 +740,12 @@ namespace Player
     {
         Character& character = Party[playerId];
         int levelsUp = 0;
-        int l = character.level;
+        int level = character.level;
 
-        while ( l <= _countof( levelXp ) && character.xp >= levelXp[l-1] )
-            l++;
+        while ( level <= _countof( levelXp ) && character.xp >= levelXp[level-1] )
+            level++;
 
-        levelsUp = l - character.level;
+        levelsUp = level - character.level;
 
         for ( int i = 0; i < levelsUp; i++ )
         {
