@@ -11,6 +11,7 @@ using System.Text;
 using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Globalization;
 
 namespace ExtractRes
 {
@@ -194,10 +195,7 @@ namespace ExtractRes
 
         static void ExtractSoundEffectsBundle( Options options )
         {
-            string nsfPath = Path.GetTempFileName();
-            Console.WriteLine( "Writing SFX NSF '{0}'", nsfPath );
-            SoundExtractor.MakeSfxNsf( nsfPath, options );
-            ExtractSoundEffects( nsfPath, options );
+            ExtractSoundEffects( options );
         }
 
         static void ExtractMenusBundle( Options options )
@@ -1102,8 +1100,10 @@ namespace ExtractRes
             public ushort End;
         }
 
-        private static void ExtractSoundEffects( string nsfPath, Options options )
+        private static void ExtractSoundEffects( Options options )
         {
+            byte[] nsfImage = BuildMemoryNsf( options, "nsf-sfx.csv" );
+
             SfxFileDesc[] effects = 
             {
                 new SfxFileDesc { Filename = "ff1-sfx-confirm.wav", Track = 0, End = 31 },
@@ -1131,7 +1131,7 @@ namespace ExtractRes
                 item.Filename = effects[i].Filename;
                 item.Begin = 0;
                 item.End = (short) effects[i].End;
-                ExtractSoundFile( nsfPath, options, item );
+                ExtractSoundFile( nsfImage, options, item );
             }
 
             File.Copy(
@@ -1142,19 +1142,26 @@ namespace ExtractRes
 
         private static void ExtractSoundFile( string nsfPath, Options options, SoundItem item )
         {
+            if ( string.IsNullOrEmpty( nsfPath ) )
+                throw new Exception( "An NSF file is needed to extract sound files." );
+
+            byte[] nsfImage = File.ReadAllBytes( nsfPath );
+
+            ExtractSoundFile( nsfImage, options, item );
+        }
+
+        private static void ExtractSoundFile( byte[] nsfImage, Options options, SoundItem item )
+        {
             const int SampleRate = 44100;
             const double SampleRateMs = SampleRate / 1000.0;
             const double MillisecondsAFrame = 1000.0 / 60.0;
-
-            if ( string.IsNullOrEmpty( nsfPath ) )
-                throw new Exception( "An NSF file is needed to extract sound files." );
 
             string outPath = options.MakeOutPath( item.Filename );
             using ( ExtractNsf.NsfEmu emu = new ExtractNsf.NsfEmu() )
             using ( ExtractNsf.WaveWriter waveWriter = new ExtractNsf.WaveWriter( SampleRate, outPath ) )
             {
                 emu.SampleRate = SampleRate;
-                emu.LoadFile( nsfPath );
+                emu.LoadMem( nsfImage, nsfImage.Length );
                 emu.StartTrack( item.Track );
 
                 waveWriter.EnableStereo();
@@ -1173,6 +1180,62 @@ namespace ExtractRes
                     waveWriter.Write( buffer, count, 1 );
                 }
             }
+        }
+
+        private class NsfChunkItem
+        {
+            public string SrcName;
+            public int SrcAddr;
+            public int DstAddr;
+            public int Length;
+
+            public static NsfChunkItem ConvertFields( string[] fields )
+            {
+                NsfChunkItem item = new NsfChunkItem();
+                item.SrcName = fields[0];
+                item.SrcAddr = int.Parse( fields[1], NumberStyles.HexNumber );
+                item.DstAddr = int.Parse( fields[2], NumberStyles.HexNumber );
+                item.Length = int.Parse( fields[3], NumberStyles.HexNumber );
+                return item;
+            }
+        }
+
+        private static byte[] BuildMemoryNsf( Options options, string tableFileName )
+        {
+            List<NsfChunkItem> nsfItems;
+
+            using ( var specStream = GetResourceStream( "ExtractRes.Data." + tableFileName ) )
+            {
+                nsfItems = DatafileReader.ReadTable( specStream, NsfChunkItem.ConvertFields );
+            }
+
+            if ( nsfItems.Count == 0 || nsfItems[0].SrcName != "" )
+                throw new Exception();
+
+            byte[] nsfImage = null;
+            var romImage = File.ReadAllBytes( options.RomPath );
+
+            foreach ( var item in nsfItems )
+            {
+                if ( item.SrcName == "" )
+                {
+                    nsfImage = new byte[item.Length];
+                }
+                else if ( string.Compare( item.SrcName, "rom", true ) == 0 )
+                {
+                    Array.Copy( romImage, item.SrcAddr, nsfImage, item.DstAddr, item.Length );
+                }
+                else
+                {
+                    using ( var stream = GetResourceStream( "ExtractRes.Data." + item.SrcName ) )
+                    {
+                        stream.Position = item.SrcAddr;
+                        stream.Read( nsfImage, item.DstAddr, item.Length );
+                    }
+                }
+            }
+
+            return nsfImage;
         }
 
         private static void ExtractFont( Options options )
