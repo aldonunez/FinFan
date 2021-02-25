@@ -143,7 +143,7 @@ namespace ExtractRes
                 writer.Write( (byte) 1 );           // NSF version
                 writer.Write( (byte) tracks.Count );
                 writer.Write( (byte) 1 );           // first song
-                writer.Write( (ushort) 0 );         // load
+                writer.Write( (ushort) 0x8000 );    // load
                 writer.Write( (ushort) initAddr );  // init
                 writer.Write( (ushort) playAddr );  // play
                 // name
@@ -563,7 +563,7 @@ namespace ExtractRes
         private static NsfTrack ExtractChaosRumbleSfx( byte[] image, BinaryReader reader, ref ushort customPtr )
         {
             ushort initAddr = (ushort) (customPtr + ImageBase);
-            reader.BaseStream.Position = 0x2E04D;
+            reader.BaseStream.Position = 0x2E04D;   // B
             reader.Read( image, 0xA03D - ImageBase, 21 );
             // LDA #8
             image[customPtr++] = 0xA9;
