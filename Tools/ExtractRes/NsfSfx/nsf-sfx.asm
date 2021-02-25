@@ -25,7 +25,7 @@
 .BYTE $00, $00, $00, $00, $00, $00, $00, $00
 
 .BYTE $00, $00                                  ; 6E Play speed, NSTC
-.BYTE $00, $00, $00, $00, $00, $00, $00, $00    ; 70 Bankswitch init
+.BYTE $06, $06, $00, $01, $02, $03, $04, $05    ; 70 Bankswitch init
 .BYTE $00, $00                                  ; 78 Play speed, PAL
 .BYTE $00                                       ; 7A PAL/NSTC bits
 .BYTE $00                                       ; 7B Extra sound chip support
