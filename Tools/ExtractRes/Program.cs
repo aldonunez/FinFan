@@ -12,12 +12,19 @@ using System.IO;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
+using System.Security.Cryptography;
 
 namespace ExtractRes
 {
     class Program
     {
         delegate void Extractor( Options options );
+
+        static byte[] RomMd5U =
+        {
+            0x24, 0xAE, 0x5E, 0xDF, 0x83, 0x75, 0x16, 0x2F,
+            0x91, 0xA6, 0x84, 0x6D, 0x32, 0x02, 0xE3, 0xD6
+        };
 
         const int LevelXP = 0x2d010;
         const int ClassInitStats = 0x3050;
@@ -128,6 +135,8 @@ namespace ExtractRes
                 return;
             }
 
+            CheckSupportedRom( options );
+
             Dictionary<string, Extractor> extractorMap = new Dictionary<string, Extractor>();
 
             extractorMap.Add( "enemies", ExtractEnemies );
@@ -160,6 +169,46 @@ namespace ExtractRes
             else
             {
                 Console.Error.WriteLine( "Function not supported: {0}", options.Function );
+            }
+        }
+
+        private static void CheckSupportedRom( Options options )
+        {
+            if ( !File.Exists( options.RomPath ) )
+            {
+                Console.WriteLine( "ROM not found" );
+                Environment.Exit( 1 );
+            }
+
+            byte[] romImage = File.ReadAllBytes( options.RomPath );
+            byte[] hash;
+
+            if ( romImage.Length < 0x20010 ||
+                romImage[0] != 'N' || romImage[1] != 'E' || romImage[2] != 'S' || romImage[3] != 0x1A )
+            {
+                Console.WriteLine( "Input file is not an NES ROM." );
+                Environment.Exit( 1 );
+            }
+
+            using ( var hashAlgo = MD5Cng.Create() )
+            {
+                hash = hashAlgo.ComputeHash( romImage, 0x10, romImage.Length - 0x10 );
+            }
+
+            if ( !AreHashesEqual( hash, RomMd5U ) )
+            {
+                Console.WriteLine( "ROM is not supported. Pass the (U) version." );
+                Environment.Exit( 1 );
+            }
+
+            bool AreHashesEqual( byte[] a, byte[] b )
+            {
+                for ( int i = 0; i < a.Length; i++ )
+                {
+                    if ( a[i] != b[i] )
+                        return false;
+                }
+                return true;
             }
         }
 
@@ -1045,6 +1094,8 @@ namespace ExtractRes
 
         private static void ExtractSongs( Options options )
         {
+            byte[] nsfImage = BuildMemoryNsf( options, "NsfSong.csv" );
+
             string[] songFilenames = 
             {
                 "01_prelude.wav",
@@ -1084,7 +1135,7 @@ namespace ExtractRes
                 item.Filename = songFilenames[i];
                 item.Begin = (short) loopPoints[i].Begin;
                 item.End = (short) loopPoints[i].End;
-                ExtractSoundFile( options.NsfPath, options, item );
+                ExtractSoundFile( nsfImage, options, item );
             }
 
             File.Copy( 

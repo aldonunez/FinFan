@@ -15,7 +15,6 @@ namespace ExtractRes
     class Options
     {
         public string RomPath;
-        public string NsfPath;
         public string Function;
         public string OutPath;
         public string Error;
@@ -44,22 +43,6 @@ namespace ExtractRes
                     if ( options.OutPath == null )
                     {
                         options.Error = "Output path: " + options.Error;
-                        break;
-                    }
-                    i++;
-                }
-                else if ( args[i].EqualsIgnore( "-nsf" ) )
-                {
-                    if ( i == args.Length - 1 )
-                    {
-                        options.Error = "Nsf path is missing.";
-                        break;
-                    }
-
-                    options.NsfPath = GetFullPath( args[i + 1], out options.Error );
-                    if ( options.NsfPath == null )
-                    {
-                        options.Error = "Nsf path: " + options.Error;
                         break;
                     }
                     i++;
