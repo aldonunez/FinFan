@@ -37,6 +37,15 @@
 
 .SEGMENT "ENTRY"
 
+; Variables for the NSF. As far I can tell, they're not used by the game.
+
+NsfCurSfxId     := $E0
+NsfSfxCounter   := $E1
+NsfSavedS       := $E2
+
+
+; Code in the original game
+
 Nsf_InitMenuConfirm     := $AD84    ; bank E
 Nsf_InitMenuCursor      := $AD9D    ; bank E
 Nsf_InitMinigameError   := $AF2C    ; bank D
@@ -80,14 +89,14 @@ InitAddrs:
 PlayAddrs:
     .ADDR Nothing
     .ADDR Nothing
-    .ADDR Nothing
+    .ADDR Nsf_PlaySimpleSq2
     .ADDR Nsf_PlayAirship
     .ADDR Nsf_PlayShip
     .ADDR Nothing
     .ADDR Nothing
     .ADDR Nothing
-    .ADDR Nothing
-    .ADDR Nothing
+    .ADDR Nsf_PlaySimpleSq2
+    .ADDR Nsf_PlaySimpleSq2
     .ADDR Nsf_PlayWipeOpen
     .ADDR Nsf_PlayWipeClose
     .ADDR Nsf_PlayFight
@@ -101,27 +110,31 @@ PlayAddrs:
     .ADDR Nsf_PlayChaos
 
 Nothing:
-	RTS
+    RTS
 
 Init:
-	STA $E0
-	ASL
-	TAY
-	LDA InitAddrs, Y
-	STA $00
-	LDA InitAddrs+1, Y
-	STA $01
-	JMP ($0000)
+    TSX
+    STX NsfSavedS
+    STA NsfCurSfxId
+    ASL
+    TAY
+    LDA InitAddrs, Y
+    STA $00
+    LDA InitAddrs+1, Y
+    STA $01
+    JMP ($0000)
 
 Play:
-	LDA $E0
-	ASL
-	TAY
-	LDA PlayAddrs, Y
-	STA $00
-	LDA PlayAddrs+1, Y
-	STA $01
-	JMP ($0000)
+    TSX
+    STX NsfSavedS
+    LDA NsfCurSfxId
+    ASL
+    TAY
+    LDA PlayAddrs, Y
+    STA $00
+    LDA PlayAddrs+1, Y
+    STA $01
+    JMP ($0000)
 
 
 ;=============================================================================
@@ -145,7 +158,27 @@ Play:
 
 ; Certain labels of data and code are based on Disch's disassembly.
 
-tmp := $10
+
+; Variables used by the game
+
+tmp     := $10
+sq2_sfx := $7E
+
+
+; MinigameError is also limited this way, and lasts $14 frames.
+
+Nsf_PlaySimpleSq2:
+    ; Limit the sound effect to the number of frames in sq2_fx,
+    ; as the game does in MusicPlay [$B099 :: 0x370A9 (bank D)]
+    LDA sq2_sfx
+    BEQ :+
+    DEC sq2_sfx
+    BEQ :+
+    RTS
+:
+    LDA #$30
+    STA $4004
+    RTS
 
 
 Nsf_PlayAirship:
@@ -158,10 +191,14 @@ Nsf_PlayShip:
 
 
 Nsf_InitDialogOpen:
+    LDA #$35
+    STA sq2_sfx
     LDA #$8E
     JMP $D6C7
 
 Nsf_InitDialogClose:
+    LDA #$25
+    STA sq2_sfx
     LDA #$95
     JMP $D6C7
 
@@ -304,21 +341,20 @@ Nsf_PlayAltar:
     ; Jump into the middle of the MainLoop of DoAltarEffect, after the call to AltarFrame.
     JMP $DA8E
 
-
 Nsf_InitError:
     LDY #$0F
-    STY $E1
-    ; Won't return.
+    STY NsfSfxCounter
+    ; Won't return normally, only by way of WaitForVBlank overlay.
     JSR PlaySFX_Error
     RTS
 
 Nsf_PlayError:
-    LDA $E1
+    LDA NsfSfxCounter
     BPL :+
     RTS
 :
     JSR $DB4B
-    DEC $E1
+    DEC NsfSfxCounter
     BMI :+
     RTS
 :
@@ -340,6 +376,6 @@ Nsf_PlayError:
 ; the NSF player wait for the next frame.
 
 WaitForVBlank_L:
-    LDX #$FD        ; Pop everything but the first address pushed
-    TXS             ; by setting the stack pointer to $01FD.
+    LDX NsfSavedS   ; Set the stack pointer to its original value
+    TXS             ; in INIT and PLAY entrypoints.
     RTS             ; Now we can return from the game to the player.
