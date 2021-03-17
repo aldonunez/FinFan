@@ -135,6 +135,8 @@ namespace ExtractRes
                 return;
             }
 
+            Directory.CreateDirectory( options.OutPath );
+
             CheckSupportedRom( options );
 
             Dictionary<string, Extractor> extractorMap = new Dictionary<string, Extractor>();
@@ -183,10 +185,10 @@ namespace ExtractRes
             byte[] romImage = File.ReadAllBytes( options.RomPath );
             byte[] hash;
 
-            if ( romImage.Length < 0x20010 ||
+            if ( romImage.Length < 0x40010 ||
                 romImage[0] != 'N' || romImage[1] != 'E' || romImage[2] != 'S' || romImage[3] != 0x1A )
             {
-                Console.WriteLine( "Input file is not an NES ROM." );
+                Console.WriteLine( "Input file is not a valid ROM." );
                 Environment.Exit( 1 );
             }
 

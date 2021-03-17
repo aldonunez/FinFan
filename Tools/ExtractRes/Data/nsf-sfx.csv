@@ -2,7 +2,7 @@ src_name,    src_addr, dst_addr, length
 ,            0,        0,        627A
 rom,         2E04D,    BD,       15
 rom,         3AD94,    E04,      2F
-rom,         36EDF,    F4F,      75
+rom,         36EDF,    F4F,      78
 rom,         33EC8,    1F38,     148
 rom,         3C010,    2080,     4000
 nsf-sfx.bin, 0,        0,        80

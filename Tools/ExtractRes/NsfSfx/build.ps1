@@ -79,7 +79,7 @@ echo "src_name,    src_addr, dst_addr, length" | redirect $specPath
 echo ",            0,        0,        $nsfSizeHex" | append $specPath
 echo ("rom,         2E04D,    {0:X},       15" -f (GetNsfOffset 0xA03D)) | append $specPath		# Chaos rumble
 echo ("rom,         3AD94,    {0:X},      2F" -f (GetNsfOffset 0xAD84)) | append $specPath		# Menu confirm and cursor
-echo ("rom,         36EDF,    {0:X},      75" -f (GetNsfOffset 0xAECF)) | append $specPath		# Minigame error
+echo ("rom,         36EDF,    {0:X},      78" -f (GetNsfOffset 0xAECF)) | append $specPath		# Minigame error
 echo ("rom,         33EC8,    {0:X},     148" -f (GetNsfOffset 0xBEB8)) | append $specPath		# Battle SFX (magic, hurt, strike)
 echo ("rom,         3C010,    {0:X},     4000" -f (GetNsfOffset 0xC000)) | append $specPath
 echo ("$baseName.bin, 0,        0,        80") | append $specPath								# Header
