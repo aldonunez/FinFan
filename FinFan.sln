@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30804.86
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{A75ED010-1A28-489E-8E35-1C8009B02DC2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExtractRes", "Tools\ExtractRes\ExtractRes.csproj", "{CF895285-A8AD-4BCE-9E89-ABC8C531E341}"
@@ -60,7 +62,10 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{CF895285-A8AD-4BCE-9E89-ABC8C531E341} = {A75ED010-1A28-489E-8E35-1C8009B02DC2}
-		{F22EEC24-C748-4758-9F14-265932295F98} = {A75ED010-1A28-489E-8E35-1C8009B02DC2}
 		{EDB6B691-F2C8-4294-808F-CB53C54B2E83} = {FC9C58EC-9CDD-4574-BF66-32623F7FDC04}
+		{F22EEC24-C748-4758-9F14-265932295F98} = {A75ED010-1A28-489E-8E35-1C8009B02DC2}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8178F11F-0CA9-493D-BB9E-89D1B89276A8}
 	EndGlobalSection
 EndGlobal
